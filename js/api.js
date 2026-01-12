@@ -111,6 +111,10 @@ class ChipsAPI {
         return await this.request('updateWeeklySummary', { data });
     }
     
+    async deleteWeeklySummary(rowIndex) {
+        return await this.request('deleteWeeklySummary', { rowIndex });
+    }
+    
     async addExpense(sheetName, data) {
         return await this.request('addExpense', { sheetName, data });
     }
