@@ -6,8 +6,10 @@ class ChipsApp {
     constructor() {
         // Data stores
         this.data = {
-            income: [],
+            cfr: [],
+            expenses: [],
             weekly: [],
+            team: [],
             siteFund: [],
             retained: [],
             savings: [],
@@ -15,8 +17,9 @@ class ChipsApp {
         };
         
         // Temporary data for forms
-        this.tempOtherExpenses = [];
         this.tempChipsIn = [];
+        this.tempChipsOut = [];
+        this.tempOtherExpenses = [];
         
         // Chart instance
         this.chart = null;
@@ -28,28 +31,15 @@ class ChipsApp {
         this.init();
     }
     
-    // Initialize the application
     async init() {
-        // Show splash screen
         await this.showSplash();
-        
-        // Setup event listeners
         this.setupEventListeners();
-        
-        // Load cached data first
         this.loadFromCache();
-        
-        // Try to sync with Google Sheets
         await this.syncData();
-        
-        // Setup auto-sync
         this.setupAutoSync();
-        
-        // Render initial view
         this.renderDashboard();
     }
     
-    // Show splash screen
     async showSplash() {
         return new Promise(resolve => {
             setTimeout(() => {
@@ -60,7 +50,6 @@ class ChipsApp {
         });
     }
     
-    // Setup event listeners
     setupEventListeners() {
         // Menu button (mobile)
         document.getElementById('menuBtn').addEventListener('click', () => {
@@ -68,23 +57,25 @@ class ChipsApp {
             document.getElementById('sidebarOverlay').classList.toggle('active');
         });
         
-        // Sidebar overlay click
         document.getElementById('sidebarOverlay').addEventListener('click', () => {
             document.getElementById('sidebar').classList.remove('active');
             document.getElementById('sidebarOverlay').classList.remove('active');
         });
         
-        // Navigation items
+        // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', () => this.handleNavigation(item));
         });
-        
-        // Bottom navigation items
         document.querySelectorAll('.bottom-nav-item').forEach(item => {
             item.addEventListener('click', () => this.handleNavigation(item));
         });
         
-        // Refresh button
+        // Sub-tabs
+        document.querySelectorAll('.sub-tab').forEach(tab => {
+            tab.addEventListener('click', () => this.handleSubTab(tab));
+        });
+        
+        // Refresh
         document.getElementById('refreshBtn').addEventListener('click', () => this.handleRefresh());
         
         // Settings
@@ -95,53 +86,51 @@ class ChipsApp {
         document.getElementById('testConnection').addEventListener('click', () => this.handleTestConnection());
         
         // Add buttons
-        document.getElementById('addIncomeBtn')?.addEventListener('click', () => this.openIncomeModal());
+        document.getElementById('addCFRBtn')?.addEventListener('click', () => this.openCFRModal());
+        document.getElementById('addExpenseBtn')?.addEventListener('click', () => this.openOtherExpensesModal());
         document.getElementById('addWeeklyBtn')?.addEventListener('click', () => this.openWeeklyModal());
-        
-        // Income form listeners
-        ['incomeCFR', 'incomeAgentComm', 'incomeLoaderSalary', 'incomeChipsOut'].forEach(id => {
-            document.getElementById(id)?.addEventListener('input', () => this.calculateIncomeFields());
-        });
         
         // Weekly GGR listener
         document.getElementById('weeklyGGR')?.addEventListener('input', () => this.calculateWeeklyFields());
     }
     
-    // Handle navigation
     handleNavigation(item) {
         const tab = item.dataset.tab;
         
-        // Update active state
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         document.querySelectorAll(`.nav-item[data-tab="${tab}"]`).forEach(i => i.classList.add('active'));
         document.querySelectorAll('.bottom-nav-item').forEach(i => i.classList.remove('active'));
         document.querySelectorAll(`.bottom-nav-item[data-tab="${tab}"]`).forEach(i => i.classList.add('active'));
         
-        // Show correct tab content
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
         document.getElementById(`tab-${tab}`).classList.add('active');
         
-        // Close mobile sidebar
         document.getElementById('sidebar').classList.remove('active');
         document.getElementById('sidebarOverlay').classList.remove('active');
         
-        // Render content
         this.renderTab(tab);
     }
     
-    // Render tab content
+    handleSubTab(tab) {
+        const subtab = tab.dataset.subtab;
+        document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`subtab-${subtab}`).classList.add('active');
+    }
+    
     renderTab(tab) {
         switch (tab) {
             case 'dashboard': this.renderDashboard(); break;
-            case 'income': this.renderIncomeTable(); break;
+            case 'income': this.renderIncomeTracker(); break;
             case 'weekly': this.renderWeeklyTable(); break;
+            case 'team': this.renderFundTable('team'); break;
             case 'sitefund': this.renderFundTable('siteFund'); break;
             case 'retained': this.renderFundTable('retained'); break;
             case 'savings': this.renderFundTable('savings'); break;
         }
     }
     
-    // Handle refresh
     async handleRefresh() {
         const btn = document.getElementById('refreshBtn');
         btn.classList.add('spinning');
@@ -149,7 +138,6 @@ class ChipsApp {
         setTimeout(() => btn.classList.remove('spinning'), 1000);
     }
     
-    // Sync data
     async syncData() {
         const syncStatus = document.getElementById('syncStatus');
         syncStatus.classList.add('syncing');
@@ -160,68 +148,71 @@ class ChipsApp {
                 this.loadDemoData();
                 syncStatus.classList.remove('syncing');
                 syncStatus.querySelector('.sync-text').textContent = 'Demo Mode';
-                this.showToast('Running in Demo Mode. Configure API in Settings.', 'warning');
+                this.showToast('Running in Demo Mode', 'warning');
                 return;
             }
             
             const result = await chipsAPI.getAllData();
             
             this.data = {
-                income: result.data.income || [],
+                cfr: result.data.cfr || [],
+                expenses: result.data.expenses || [],
                 weekly: result.data.weekly || [],
+                team: result.data.team || [],
                 siteFund: result.data.siteFund || [],
                 retained: result.data.retained || [],
                 savings: result.data.savings || [],
                 lastNetChips: result.data.lastNetChips || 0
             };
             
-            // Cache data
             cacheManager.save(this.data);
             
-            // Update sync status
             syncStatus.classList.remove('syncing', 'error');
             syncStatus.querySelector('.sync-text').textContent = 'Synced';
             
-            // Refresh view
             const activeTab = document.querySelector('.nav-item.active')?.dataset.tab || 'dashboard';
             this.renderTab(activeTab);
             
-            this.showToast('Data synced successfully!', 'success');
+            this.showToast('Data synced!', 'success');
             
         } catch (error) {
             console.error('Sync error:', error);
             syncStatus.classList.remove('syncing');
             syncStatus.classList.add('error');
-            syncStatus.querySelector('.sync-text').textContent = 'Sync Error';
+            syncStatus.querySelector('.sync-text').textContent = 'Error';
             this.showToast(error.message, 'error');
         }
     }
     
-    // Load demo data
     loadDemoData() {
         this.data = {
-            income: [
-                { rowIndex: 2, date: '2025-01-01', shiftTime: '12:00PM to 8:00PM', cfr: 25000, agentCommission: 1000, loaderSalary: 560, otherExpenses: 500, netIncome: 22940, chipsIn: 100000, chipsOut: 25000, netChips: 75000, totalChipsRemaining: 75000 },
-                { rowIndex: 3, date: '2025-01-01', shiftTime: '8:00PM to 4:00AM', cfr: 18000, agentCommission: 800, loaderSalary: 560, otherExpenses: 200, netIncome: 16440, chipsIn: 75000, chipsOut: 18000, netChips: 57000, totalChipsRemaining: 57000 },
-                { rowIndex: 4, date: '2025-01-02', shiftTime: '12:00PM to 8:00PM', cfr: 30000, agentCommission: 1200, loaderSalary: 560, otherExpenses: 800, netIncome: 27440, chipsIn: 57000, chipsOut: 30000, netChips: 27000, totalChipsRemaining: 27000 }
+            cfr: [
+                { rowIndex: 2, date: '2025-01-01', shiftTime: '12:00PM to 8:00PM', cfr: 25000, loaderSalary: 560, chipsIn: 100000, chipsInList: '[{"amount":100000,"remarks":"Starting"}]', chipsOut: 25000, chipsOutList: '[{"amount":25000,"remarks":"Cashout"}]', netChips: 75000 },
+                { rowIndex: 3, date: '2025-01-02', shiftTime: '8:00PM to 4:00AM', cfr: 30000, loaderSalary: 560, chipsIn: 75000, chipsInList: '[{"amount":75000,"remarks":"From prev"}]', chipsOut: 30000, chipsOutList: '[{"amount":30000,"remarks":"Cashout"}]', netChips: 45000 }
+            ],
+            expenses: [
+                { rowIndex: 2, date: '2025-01-01', total: 5000, expensesList: '[{"amount":3000,"remarks":"Groceries"},{"amount":2000,"remarks":"Gas"}]' },
+                { rowIndex: 3, date: '2025-01-02', total: 2500, expensesList: '[{"amount":2500,"remarks":"Load"}]' }
             ],
             weekly: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', ggr: 500000, agentCommissions: 15000, loaderSalary: 11760, otherExpenses: 5000, netProfit: 468240, chipsOut: 200000, totalChipsRemaining: 50000, roi: 0.936, status: 'Profit', distributed80: 374592, team50: 234120, siteFund35: 163884, savings15: 70236 }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', ggr: 500000, loaderSalary: 3920, otherExpenses: 7500, netProfit: 488580, roi: 0.977, status: 'Profit', team50: 244290, siteFund35: 171003, retained20: 97716, savings15: 73287 }
+            ],
+            team: [
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 488580, allocated: 244290, spent: 50000, spentList: '[{"amount":50000,"remarks":"Withdrawal"}]', remaining: 194290 }
             ],
             siteFund: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', sourceAmount: 374592, allocated: 163884, spent: 5000, remaining: 158884, spentList: '[{"amount":5000,"remarks":"Office supplies"}]' }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 488580, allocated: 171003, spent: 10000, spentList: '[{"amount":10000,"remarks":"Office"}]', remaining: 161003 }
             ],
             retained: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', sourceAmount: 468240, allocated: 93648, spent: 10000, remaining: 83648, spentList: '[{"amount":10000,"remarks":"Electric bill"}]' }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 488580, allocated: 97716, spent: 15000, spentList: '[{"amount":15000,"remarks":"Bills"}]', remaining: 82716 }
             ],
             savings: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', sourceAmount: 374592, allocated: 70236, spent: 0, remaining: 70236, spentList: '[]' }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 488580, allocated: 73287, spent: 0, spentList: '[]', remaining: 73287 }
             ],
-            lastNetChips: 27000
+            lastNetChips: 45000
         };
     }
     
-    // Load from cache
     loadFromCache() {
         const cached = cacheManager.load();
         if (cached && cached.data) {
@@ -229,25 +220,22 @@ class ChipsApp {
         }
     }
     
-    // Setup auto-sync
     setupAutoSync() {
         const settings = getSettings();
         if (this.syncInterval) clearInterval(this.syncInterval);
-        
         if (settings.autoSync && chipsAPI.isConfigured()) {
             this.syncInterval = setInterval(() => this.syncData(), CONFIG.APP.AUTO_SYNC_INTERVAL);
         }
     }
     
-    // ===== RENDER FUNCTIONS =====
+    // ===== DASHBOARD =====
     
     renderDashboard() {
         const weekly = this.data.weekly || [];
         
-        // Calculate totals
         const totalProfit = weekly.reduce((sum, w) => sum + (w.netProfit || 0), 0);
         const totalGGR = weekly.reduce((sum, w) => sum + (w.ggr || 0), 0);
-        const totalChips = this.data.lastNetChips || (weekly.length > 0 ? weekly[weekly.length - 1].totalChipsRemaining : 0);
+        const totalChips = this.data.lastNetChips || 0;
         const avgROI = weekly.length > 0 ? (weekly.reduce((sum, w) => sum + (w.roi || 0), 0) / weekly.length) * 100 : 0;
         
         document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
@@ -255,11 +243,12 @@ class ChipsApp {
         document.getElementById('totalChips').textContent = formatNumber(totalChips);
         document.getElementById('avgROI').textContent = avgROI.toFixed(2) + '%';
         
-        // Fund totals
+        const teamTotal = this.data.team?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
         const siteFundTotal = this.data.siteFund?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
         const retainedTotal = this.data.retained?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
         const savingsTotal = this.data.savings?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
         
+        document.getElementById('teamTotal').textContent = formatCurrency(teamTotal);
         document.getElementById('siteFundTotal').textContent = formatCurrency(siteFundTotal);
         document.getElementById('retainedTotal').textContent = formatCurrency(retainedTotal);
         document.getElementById('savingsTotal').textContent = formatCurrency(savingsTotal);
@@ -271,16 +260,10 @@ class ChipsApp {
     renderWeeklyChart() {
         const ctx = document.getElementById('weeklyChart');
         if (!ctx) return;
-        
         if (this.chart) this.chart.destroy();
         
         const weekly = this.data.weekly?.slice(-12) || [];
-        
-        const labels = weekly.map(w => {
-            const date = new Date(w.start);
-            return date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
-        });
-        
+        const labels = weekly.map(w => formatDate(w.start));
         const profits = weekly.map(w => w.netProfit > 0 ? w.netProfit : 0);
         const losses = weekly.map(w => w.netProfit < 0 ? Math.abs(w.netProfit) : 0);
         
@@ -289,8 +272,8 @@ class ChipsApp {
             data: {
                 labels,
                 datasets: [
-                    { label: 'Profit', data: profits, backgroundColor: 'rgba(0, 255, 136, 0.7)', borderColor: '#00ff88', borderWidth: 1, borderRadius: 4 },
-                    { label: 'Loss', data: losses, backgroundColor: 'rgba(255, 71, 87, 0.7)', borderColor: '#ff4757', borderWidth: 1, borderRadius: 4 }
+                    { label: 'Profit', data: profits, backgroundColor: 'rgba(0, 255, 136, 0.7)', borderRadius: 4 },
+                    { label: 'Loss', data: losses, backgroundColor: 'rgba(255, 71, 87, 0.7)', borderRadius: 4 }
                 ]
             },
             options: {
@@ -298,8 +281,8 @@ class ChipsApp {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#606070' } },
-                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#606070', callback: v => '₱' + (v / 1000) + 'K' } }
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606070' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606070', callback: v => '₱' + (v/1000) + 'K' } }
                 }
             }
         });
@@ -307,208 +290,135 @@ class ChipsApp {
     
     renderRecentActivity() {
         const container = document.getElementById('recentActivity');
-        const income = this.data.income || [];
+        const cfr = this.data.cfr || [];
         
-        if (income.length === 0) {
+        if (cfr.length === 0) {
             container.innerHTML = '<div class="recent-item"><p style="color: var(--text-muted); text-align: center; width: 100%;">No recent activity</p></div>';
             return;
         }
         
-        // Sort by date descending, then by rowIndex descending, take top 5
-        const recentIncome = [...income]
-            .sort((a, b) => {
-                const dateCompare = new Date(b.date) - new Date(a.date);
-                if (dateCompare !== 0) return dateCompare;
-                return b.rowIndex - a.rowIndex;
-            })
-            .slice(0, 5);
+        const recent = [...cfr].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
         
-        container.innerHTML = recentIncome.map(item => `
+        container.innerHTML = recent.map(item => `
             <div class="recent-item">
-                <div class="recent-icon">${item.netIncome >= 0 ? '📈' : '📉'}</div>
+                <div class="recent-icon">💰</div>
                 <div class="recent-info">
                     <div class="recent-title">${item.shiftTime}</div>
                     <div class="recent-date">${formatDate(item.date)}</div>
                 </div>
-                <div class="recent-amount ${getValueClass(item.netIncome)}">${formatCurrency(item.netIncome)}</div>
+                <div class="recent-amount positive">${formatCurrency(item.cfr)}</div>
             </div>
         `).join('');
     }
     
-    renderIncomeTable() {
-        const tbody = document.getElementById('incomeTableBody');
-        const income = this.data.income || [];
+    // ===== INCOME TRACKER =====
+    
+    renderIncomeTracker() {
+        this.renderCFRTable();
+        this.renderExpensesTable();
         
-        // Update mini stats
         document.getElementById('lastNetChips').textContent = formatNumber(this.data.lastNetChips);
         
         const today = new Date().toISOString().split('T')[0];
-        const todayIncome = income.filter(i => i.date === today).reduce((sum, i) => sum + (i.netIncome || 0), 0);
-        document.getElementById('todayIncome').textContent = formatCurrency(todayIncome);
+        const todayCFR = this.data.cfr?.filter(c => c.date === today).reduce((sum, c) => sum + (c.cfr || 0), 0) || 0;
+        const todayExp = this.data.expenses?.filter(e => e.date === today).reduce((sum, e) => sum + (e.total || 0), 0) || 0;
         
-        if (income.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">No data. Click "Add Entry" to start.</td></tr>';
+        document.getElementById('todayCFR').textContent = formatCurrency(todayCFR);
+        document.getElementById('todayExpenses').textContent = formatCurrency(todayExp);
+    }
+    
+    renderCFRTable() {
+        const tbody = document.getElementById('cfrTableBody');
+        const cfr = this.data.cfr || [];
+        
+        if (cfr.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No CFR entries. Click "+ CFR Entry" to add.</td></tr>';
             return;
         }
         
-        // Sort by date descending (latest first), then by rowIndex descending
-        const sortedIncome = [...income].sort((a, b) => {
-            const dateCompare = new Date(b.date) - new Date(a.date);
-            if (dateCompare !== 0) return dateCompare;
-            return b.rowIndex - a.rowIndex;
-        });
+        const sorted = [...cfr].sort((a, b) => new Date(b.date) - new Date(a.date) || b.rowIndex - a.rowIndex);
         
-        tbody.innerHTML = sortedIncome.map(item => `
+        tbody.innerHTML = sorted.map(item => `
             <tr>
                 <td>${formatDate(item.date)}</td>
                 <td>${item.shiftTime}</td>
                 <td class="positive">${formatCurrency(item.cfr)}</td>
-                <td>${formatCurrency(item.agentCommission)}</td>
                 <td>${formatCurrency(item.loaderSalary)}</td>
-                <td>${formatCurrency(item.otherExpenses)}</td>
-                <td class="${getValueClass(item.netIncome)}">${formatCurrency(item.netIncome)}</td>
                 <td>${formatNumber(item.chipsIn)}</td>
                 <td>${formatNumber(item.chipsOut)}</td>
                 <td class="${getValueClass(item.netChips)}">${formatNumber(item.netChips)}</td>
                 <td>
-                    <button class="action-btn edit" onclick="app.editIncome(${item.rowIndex})">Edit</button>
-                    <button class="action-btn delete" onclick="app.deleteIncome(${item.rowIndex})">Del</button>
+                    <button class="action-btn edit" onclick="app.editCFR(${item.rowIndex})">Edit</button>
+                    <button class="action-btn delete" onclick="app.deleteCFR(${item.rowIndex})">Del</button>
                 </td>
             </tr>
         `).join('');
     }
     
-    renderWeeklyTable() {
-        const tbody = document.getElementById('weeklyTableBody');
-        const weekly = this.data.weekly || [];
+    renderExpensesTable() {
+        const tbody = document.getElementById('expensesTableBody');
+        const expenses = this.data.expenses || [];
         
-        if (weekly.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; color: var(--text-muted);">No data. Click "New Cutoff" to create.</td></tr>';
+        if (expenses.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No expenses. Click "+ Other Expenses" to add.</td></tr>';
             return;
         }
         
-        // Sort by start date descending (latest first)
-        const sortedWeekly = [...weekly].sort((a, b) => {
-            return new Date(b.start) - new Date(a.start);
-        });
+        const sorted = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date) || b.rowIndex - a.rowIndex);
         
-        tbody.innerHTML = sortedWeekly.map(item => `
-            <tr>
-                <td>${formatDate(item.start)}</td>
-                <td>${formatDate(item.end)}</td>
-                <td class="positive">${formatCurrency(item.ggr)}</td>
-                <td>${formatCurrency(item.agentCommissions)}</td>
-                <td>${formatCurrency(item.loaderSalary)}</td>
-                <td>${formatCurrency(item.otherExpenses)}</td>
-                <td class="${getValueClass(item.netProfit)}">${formatCurrency(item.netProfit)}</td>
-                <td class="${item.roi >= 0 ? 'positive' : 'negative'}">${(item.roi * 100).toFixed(2)}%</td>
-                <td><span class="${item.status === 'Profit' ? 'status-profit' : 'status-loss'}">${item.status}</span></td>
-                <td>${formatCurrency(item.distributed80)}</td>
-                <td>${formatCurrency(item.team50)}</td>
-                <td>${formatCurrency(item.siteFund35)}</td>
-                <td>${formatCurrency(item.savings15)}</td>
-                <td>
-                    <button class="action-btn edit" onclick="app.editWeekly(${item.rowIndex})">Edit</button>
-                    <button class="action-btn delete" onclick="app.deleteWeekly(${item.rowIndex})">Del</button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = sorted.map(item => {
+            let details = '-';
+            try {
+                const list = JSON.parse(item.expensesList || '[]');
+                details = list.length > 0 ? list.map(e => e.remarks).join(', ') : '-';
+            } catch(e) {}
+            
+            return `
+                <tr>
+                    <td>${formatDate(item.date)}</td>
+                    <td class="negative">${formatCurrency(item.total)}</td>
+                    <td>${details.substring(0, 50)}${details.length > 50 ? '...' : ''}</td>
+                    <td>
+                        <button class="action-btn view" onclick="app.viewDetails('${encodeURIComponent(item.expensesList || '[]')}')">View</button>
+                        <button class="action-btn edit" onclick="app.editExpenses(${item.rowIndex})">Edit</button>
+                        <button class="action-btn delete" onclick="app.deleteExpenses(${item.rowIndex})">Del</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
     
-    renderFundTable(type) {
-        const tableId = type === 'siteFund' ? 'siteFundTable' : (type === 'retained' ? 'retainedTable' : 'savingsTable');
-        const tbody = document.getElementById(tableId + 'Body');
-        const data = this.data[type] || [];
-        
-        // Calculate totals
-        const allocated = data.reduce((sum, f) => sum + (f.allocated || 0), 0);
-        const spent = data.reduce((sum, f) => sum + (f.spent || 0), 0);
-        const remaining = data.reduce((sum, f) => sum + (f.remaining || 0), 0);
-        
-        // Update summary cards
-        if (type === 'siteFund') {
-            document.getElementById('siteFundAllocated').textContent = formatCurrency(allocated);
-            document.getElementById('siteFundSpent').textContent = formatCurrency(spent);
-            document.getElementById('siteFundRemaining').textContent = formatCurrency(remaining);
-            document.getElementById('siteFundRemaining').className = `fund-value ${getValueClass(remaining)}`;
-        } else if (type === 'retained') {
-            document.getElementById('retainedAllocated').textContent = formatCurrency(allocated);
-            document.getElementById('retainedSpent').textContent = formatCurrency(spent);
-            document.getElementById('retainedRemaining').textContent = formatCurrency(remaining);
-            document.getElementById('retainedRemaining').className = `fund-value ${getValueClass(remaining)}`;
-        } else {
-            document.getElementById('savingsAllocated').textContent = formatCurrency(allocated);
-            document.getElementById('savingsWithdrawn').textContent = formatCurrency(spent);
-            document.getElementById('savingsBalance').textContent = formatCurrency(remaining);
-            document.getElementById('savingsBalance').className = `fund-value ${getValueClass(remaining)}`;
-        }
-        
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No data available</td></tr>';
-            return;
-        }
-        
-        // Sort by start date descending (latest first)
-        const sortedData = [...data].sort((a, b) => {
-            return new Date(b.start) - new Date(a.start);
-        });
-        
-        const sourceLabel = type === 'retained' ? 'Net Profit' : 'Distributed 80%';
-        const allocLabel = type === 'siteFund' ? 'Site Fund 35%' : (type === 'retained' ? 'Retained 20%' : 'Savings 15%');
-        const sheetName = type === 'siteFund' ? 'Site Fund 35%' : (type === 'retained' ? 'Retained 20%' : 'Savings 15%');
-        
-        tbody.innerHTML = sortedData.map(item => `
-            <tr>
-                <td>${formatDate(item.start)}</td>
-                <td>${formatDate(item.end)}</td>
-                <td>${formatCurrency(item.sourceAmount)}</td>
-                <td class="positive">${formatCurrency(item.allocated)}</td>
-                <td class="negative">${formatCurrency(item.spent)}</td>
-                <td class="${getValueClass(item.remaining)}">${formatCurrency(item.remaining)}</td>
-                <td>
-                    <button class="action-btn add-expense" onclick="app.openExpenseModal('${sheetName}', ${item.rowIndex})">+ Expense</button>
-                    <button class="action-btn view" onclick="app.viewExpenses('${item.spentList || '[]'}')">View</button>
-                </td>
-            </tr>
-        `).join('');
-    }
+    // ===== CFR MODAL =====
     
-    // ===== INCOME MODAL =====
-    
-    openIncomeModal(editData = null) {
-        this.tempOtherExpenses = [];
+    openCFRModal(editData = null) {
         this.tempChipsIn = [];
+        this.tempChipsOut = [];
         
-        // Reset form
-        document.getElementById('incomeForm').reset();
-        document.getElementById('incomeRowIndex').value = '';
-        document.getElementById('otherExpensesList').innerHTML = '';
+        document.getElementById('cfrForm').reset();
+        document.getElementById('cfrRowIndex').value = '';
         document.getElementById('chipsInList').innerHTML = '';
+        document.getElementById('chipsOutList').innerHTML = '';
         
         if (editData) {
-            document.getElementById('incomeModalTitle').textContent = 'Edit Income Entry';
-            document.getElementById('incomeRowIndex').value = editData.rowIndex;
-            document.getElementById('incomeDate').value = formatDateForInput(editData.date);
-            document.getElementById('incomeShift').value = editData.shiftTime;
-            document.getElementById('incomeCFR').value = editData.cfr;
-            document.getElementById('incomeAgentComm').value = editData.agentCommission;
-            document.getElementById('incomeLoaderSalary').value = editData.loaderSalary;
-            document.getElementById('incomeChipsOut').value = editData.chipsOut;
+            document.getElementById('cfrModalTitle').textContent = 'Edit CFR Entry';
+            document.getElementById('cfrRowIndex').value = editData.rowIndex;
+            document.getElementById('cfrDate').value = formatDateForInput(editData.date);
+            document.getElementById('cfrShift').value = editData.shiftTime;
+            document.getElementById('cfrAmount').value = editData.cfr;
+            document.getElementById('cfrLoaderSalary').value = editData.loaderSalary;
             
-            // Load existing expenses
             try {
-                this.tempOtherExpenses = JSON.parse(editData.otherExpensesList || '[]');
                 this.tempChipsIn = JSON.parse(editData.chipsInList || '[]');
-            } catch (e) {}
+                this.tempChipsOut = JSON.parse(editData.chipsOutList || '[]');
+            } catch(e) {}
             
-            this.renderOtherExpensesList();
             this.renderChipsInList();
+            this.renderChipsOutList();
         } else {
-            document.getElementById('incomeModalTitle').textContent = 'Add Income Entry';
-            document.getElementById('incomeDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('incomeLoaderSalary').value = '560';
+            document.getElementById('cfrModalTitle').textContent = 'Add CFR Entry';
+            document.getElementById('cfrDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('cfrLoaderSalary').value = '560';
             
-            // Auto-fill chips in with last net chips
             const lastNetChips = this.data.lastNetChips || 0;
             document.getElementById('autoFillValue').textContent = formatNumber(lastNetChips);
             
@@ -518,63 +428,24 @@ class ChipsApp {
             }
         }
         
-        this.calculateIncomeFields();
-        document.getElementById('incomeModal').classList.add('active');
+        this.calculateCFRFields();
+        document.getElementById('cfrModal').classList.add('active');
     }
     
-    closeIncomeModal() {
-        document.getElementById('incomeModal').classList.remove('active');
-    }
-    
-    addExpenseItem() {
-        const amount = parseFloat(document.getElementById('newExpenseAmount').value) || 0;
-        const remarks = document.getElementById('newExpenseRemarks').value.trim();
-        
-        if (amount <= 0) {
-            this.showToast('Please enter a valid amount', 'warning');
-            return;
-        }
-        
-        this.tempOtherExpenses.push({ amount, remarks: remarks || 'No remarks' });
-        this.renderOtherExpensesList();
-        this.calculateIncomeFields();
-        
-        // Clear inputs
-        document.getElementById('newExpenseAmount').value = '';
-        document.getElementById('newExpenseRemarks').value = '';
-    }
-    
-    removeExpenseItem(index) {
-        this.tempOtherExpenses.splice(index, 1);
-        this.renderOtherExpensesList();
-        this.calculateIncomeFields();
-    }
-    
-    renderOtherExpensesList() {
-        const container = document.getElementById('otherExpensesList');
-        container.innerHTML = this.tempOtherExpenses.map((item, index) => `
-            <div class="multi-input-item">
-                <span class="item-amount">${formatCurrency(item.amount)}</span>
-                <span class="item-remarks">${item.remarks}</span>
-                <button type="button" class="item-remove" onclick="app.removeExpenseItem(${index})">×</button>
-            </div>
-        `).join('');
+    closeCFRModal() {
+        document.getElementById('cfrModal').classList.remove('active');
     }
     
     addChipsInItem() {
         const amount = parseFloat(document.getElementById('newChipsInAmount').value) || 0;
         const remarks = document.getElementById('newChipsInRemarks').value.trim();
         
-        if (amount <= 0) {
-            this.showToast('Please enter a valid amount', 'warning');
-            return;
-        }
+        if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
         
         this.tempChipsIn.push({ amount, remarks: remarks || 'No remarks' });
         this.renderChipsInList();
-        this.calculateIncomeFields();
+        this.calculateCFRFields();
         
-        // Clear inputs
         document.getElementById('newChipsInAmount').value = '';
         document.getElementById('newChipsInRemarks').value = '';
     }
@@ -582,49 +453,68 @@ class ChipsApp {
     removeChipsInItem(index) {
         this.tempChipsIn.splice(index, 1);
         this.renderChipsInList();
-        this.calculateIncomeFields();
+        this.calculateCFRFields();
     }
     
     renderChipsInList() {
-        const container = document.getElementById('chipsInList');
-        container.innerHTML = this.tempChipsIn.map((item, index) => `
+        document.getElementById('chipsInList').innerHTML = this.tempChipsIn.map((item, i) => `
             <div class="multi-input-item">
                 <span class="item-amount">${formatNumber(item.amount)}</span>
                 <span class="item-remarks">${item.remarks}</span>
-                <button type="button" class="item-remove" onclick="app.removeChipsInItem(${index})">×</button>
+                <button type="button" class="item-remove" onclick="app.removeChipsInItem(${i})">×</button>
             </div>
         `).join('');
     }
     
-    calculateIncomeFields() {
-        const cfr = parseFloat(document.getElementById('incomeCFR').value) || 0;
-        const agentComm = parseFloat(document.getElementById('incomeAgentComm').value) || 0;
-        const loaderSalary = parseFloat(document.getElementById('incomeLoaderSalary').value) || 0;
-        const chipsOut = parseFloat(document.getElementById('incomeChipsOut').value) || 0;
+    addChipsOutItem() {
+        const amount = parseFloat(document.getElementById('newChipsOutAmount').value) || 0;
+        const remarks = document.getElementById('newChipsOutRemarks').value.trim();
         
-        const totalOtherExpenses = this.tempOtherExpenses.reduce((sum, item) => sum + item.amount, 0);
+        if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
+        
+        this.tempChipsOut.push({ amount, remarks: remarks || 'No remarks' });
+        this.renderChipsOutList();
+        this.calculateCFRFields();
+        
+        document.getElementById('newChipsOutAmount').value = '';
+        document.getElementById('newChipsOutRemarks').value = '';
+    }
+    
+    removeChipsOutItem(index) {
+        this.tempChipsOut.splice(index, 1);
+        this.renderChipsOutList();
+        this.calculateCFRFields();
+    }
+    
+    renderChipsOutList() {
+        document.getElementById('chipsOutList').innerHTML = this.tempChipsOut.map((item, i) => `
+            <div class="multi-input-item">
+                <span class="item-amount">${formatNumber(item.amount)}</span>
+                <span class="item-remarks">${item.remarks}</span>
+                <button type="button" class="item-remove" onclick="app.removeChipsOutItem(${i})">×</button>
+            </div>
+        `).join('');
+    }
+    
+    calculateCFRFields() {
         const totalChipsIn = this.tempChipsIn.reduce((sum, item) => sum + item.amount, 0);
+        const totalChipsOut = this.tempChipsOut.reduce((sum, item) => sum + item.amount, 0);
+        const netChips = totalChipsIn - totalChipsOut;
         
-        const netIncome = cfr - agentComm - loaderSalary - totalOtherExpenses;
-        const netChips = totalChipsIn - chipsOut;
-        
-        document.getElementById('totalOtherExpenses').textContent = formatCurrency(totalOtherExpenses);
-        document.getElementById('calculatedNetIncome').textContent = formatCurrency(netIncome);
         document.getElementById('totalChipsIn').textContent = formatNumber(totalChipsIn);
+        document.getElementById('totalChipsOut').textContent = formatNumber(totalChipsOut);
         document.getElementById('calculatedNetChips').textContent = formatNumber(netChips);
     }
     
-    async saveIncomeEntry() {
-        const rowIndex = document.getElementById('incomeRowIndex').value;
-        const date = document.getElementById('incomeDate').value;
-        const shiftTime = document.getElementById('incomeShift').value;
-        const cfr = parseFloat(document.getElementById('incomeCFR').value) || 0;
-        const agentCommission = parseFloat(document.getElementById('incomeAgentComm').value) || 0;
-        const loaderSalary = parseFloat(document.getElementById('incomeLoaderSalary').value) || 0;
-        const chipsOut = parseFloat(document.getElementById('incomeChipsOut').value) || 0;
+    async saveCFREntry() {
+        const rowIndex = document.getElementById('cfrRowIndex').value;
+        const date = document.getElementById('cfrDate').value;
+        const shiftTime = document.getElementById('cfrShift').value;
+        const cfr = parseFloat(document.getElementById('cfrAmount').value) || 0;
+        const loaderSalary = parseFloat(document.getElementById('cfrLoaderSalary').value) || 0;
         
-        if (!date) {
-            this.showToast('Please select a date', 'warning');
+        if (!date || cfr <= 0) {
+            this.showToast('Fill required fields', 'warning');
             return;
         }
         
@@ -632,89 +522,213 @@ class ChipsApp {
             date,
             shiftTime,
             cfr,
-            agentCommission,
             loaderSalary,
-            otherExpensesList: this.tempOtherExpenses,
             chipsInList: this.tempChipsIn,
-            chipsOut
+            chipsOutList: this.tempChipsOut
         };
         
-        if (rowIndex) {
-            data.rowIndex = parseInt(rowIndex);
-        }
+        if (rowIndex) data.rowIndex = parseInt(rowIndex);
         
         try {
             this.showToast('Saving...', 'info');
-            
             if (rowIndex) {
-                await chipsAPI.updateIncomeEntry(data);
+                await chipsAPI.updateCFREntry(data);
             } else {
-                await chipsAPI.addIncomeEntry(data);
+                await chipsAPI.addCFREntry(data);
             }
-            
-            this.closeIncomeModal();
+            this.closeCFRModal();
             await this.syncData();
-            this.showToast('Entry saved successfully!', 'success');
-            
+            this.showToast('CFR entry saved!', 'success');
         } catch (error) {
             this.showToast(error.message, 'error');
         }
     }
     
-    editIncome(rowIndex) {
-        const item = this.data.income.find(i => i.rowIndex === rowIndex);
-        if (item) {
-            this.openIncomeModal(item);
+    editCFR(rowIndex) {
+        const item = this.data.cfr.find(c => c.rowIndex === rowIndex);
+        if (item) this.openCFRModal(item);
+    }
+    
+    async deleteCFR(rowIndex) {
+        if (!confirm('Delete this CFR entry?')) return;
+        try {
+            await chipsAPI.deleteCFREntry(rowIndex);
+            await this.syncData();
+            this.showToast('Deleted!', 'success');
+        } catch (error) {
+            this.showToast(error.message, 'error');
         }
     }
     
-    async deleteIncome(rowIndex) {
-        if (!confirm('Are you sure you want to delete this entry?')) return;
+    // ===== OTHER EXPENSES MODAL =====
+    
+    openOtherExpensesModal(editData = null) {
+        this.tempOtherExpenses = [];
+        
+        document.getElementById('otherExpensesForm').reset();
+        document.getElementById('otherExpensesRowIndex').value = '';
+        document.getElementById('otherExpensesList').innerHTML = '';
+        
+        if (editData) {
+            document.getElementById('otherExpensesModalTitle').textContent = 'Edit Other Expenses';
+            document.getElementById('otherExpensesRowIndex').value = editData.rowIndex;
+            document.getElementById('otherExpensesDate').value = formatDateForInput(editData.date);
+            
+            try {
+                this.tempOtherExpenses = JSON.parse(editData.expensesList || '[]');
+            } catch(e) {}
+            
+            this.renderOtherExpensesList();
+        } else {
+            document.getElementById('otherExpensesModalTitle').textContent = 'Add Other Expenses';
+            document.getElementById('otherExpensesDate').value = new Date().toISOString().split('T')[0];
+        }
+        
+        this.calculateOtherExpenses();
+        document.getElementById('otherExpensesModal').classList.add('active');
+    }
+    
+    closeOtherExpensesModal() {
+        document.getElementById('otherExpensesModal').classList.remove('active');
+    }
+    
+    addExpenseItem() {
+        const amount = parseFloat(document.getElementById('newExpenseAmount').value) || 0;
+        const remarks = document.getElementById('newExpenseRemarks').value.trim();
+        
+        if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
+        
+        this.tempOtherExpenses.push({ amount, remarks: remarks || 'No remarks' });
+        this.renderOtherExpensesList();
+        this.calculateOtherExpenses();
+        
+        document.getElementById('newExpenseAmount').value = '';
+        document.getElementById('newExpenseRemarks').value = '';
+    }
+    
+    removeExpenseItem(index) {
+        this.tempOtherExpenses.splice(index, 1);
+        this.renderOtherExpensesList();
+        this.calculateOtherExpenses();
+    }
+    
+    renderOtherExpensesList() {
+        document.getElementById('otherExpensesList').innerHTML = this.tempOtherExpenses.map((item, i) => `
+            <div class="multi-input-item">
+                <span class="item-amount">${formatCurrency(item.amount)}</span>
+                <span class="item-remarks">${item.remarks}</span>
+                <button type="button" class="item-remove" onclick="app.removeExpenseItem(${i})">×</button>
+            </div>
+        `).join('');
+    }
+    
+    calculateOtherExpenses() {
+        const total = this.tempOtherExpenses.reduce((sum, item) => sum + item.amount, 0);
+        document.getElementById('totalOtherExpenses').textContent = formatCurrency(total);
+    }
+    
+    async saveOtherExpensesEntry() {
+        const rowIndex = document.getElementById('otherExpensesRowIndex').value;
+        const date = document.getElementById('otherExpensesDate').value;
+        
+        if (!date || this.tempOtherExpenses.length === 0) {
+            this.showToast('Add at least one expense', 'warning');
+            return;
+        }
+        
+        const data = {
+            date,
+            expensesList: this.tempOtherExpenses
+        };
+        
+        if (rowIndex) data.rowIndex = parseInt(rowIndex);
         
         try {
-            await chipsAPI.deleteIncomeEntry(rowIndex);
+            this.showToast('Saving...', 'info');
+            if (rowIndex) {
+                await chipsAPI.updateExpensesEntry(data);
+            } else {
+                await chipsAPI.addExpensesEntry(data);
+            }
+            this.closeOtherExpensesModal();
             await this.syncData();
-            this.showToast('Entry deleted!', 'success');
+            this.showToast('Expenses saved!', 'success');
         } catch (error) {
             this.showToast(error.message, 'error');
         }
     }
     
-    // ===== WEEKLY MODAL =====
+    editExpenses(rowIndex) {
+        const item = this.data.expenses.find(e => e.rowIndex === rowIndex);
+        if (item) this.openOtherExpensesModal(item);
+    }
+    
+    async deleteExpenses(rowIndex) {
+        if (!confirm('Delete this expense entry?')) return;
+        try {
+            await chipsAPI.deleteExpensesEntry(rowIndex);
+            await this.syncData();
+            this.showToast('Deleted!', 'success');
+        } catch (error) {
+            this.showToast(error.message, 'error');
+        }
+    }
+    
+    // ===== WEEKLY SUMMARY =====
+    
+    renderWeeklyTable() {
+        const tbody = document.getElementById('weeklyTableBody');
+        const weekly = this.data.weekly || [];
+        
+        if (weekly.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; color: var(--text-muted);">No data. Click "New Cutoff" to create.</td></tr>';
+            return;
+        }
+        
+        const sorted = [...weekly].sort((a, b) => new Date(b.start) - new Date(a.start));
+        
+        tbody.innerHTML = sorted.map(item => `
+            <tr>
+                <td>${formatDate(item.start)}</td>
+                <td>${formatDate(item.end)}</td>
+                <td class="positive">${formatCurrency(item.ggr)}</td>
+                <td>${formatCurrency(item.loaderSalary)}</td>
+                <td>${formatCurrency(item.otherExpenses)}</td>
+                <td class="${getValueClass(item.netProfit)}">${formatCurrency(item.netProfit)}</td>
+                <td>${(item.roi * 100).toFixed(2)}%</td>
+                <td><span class="${item.status === 'Profit' ? 'status-profit' : 'status-loss'}">${item.status}</span></td>
+                <td>${formatCurrency(item.team50)}</td>
+                <td>${formatCurrency(item.siteFund35)}</td>
+                <td>${formatCurrency(item.retained20)}</td>
+                <td>${formatCurrency(item.savings15)}</td>
+                <td>
+                    <button class="action-btn edit" onclick="app.editWeekly(${item.rowIndex})">Edit</button>
+                    <button class="action-btn delete" onclick="app.deleteWeekly(${item.rowIndex})">Del</button>
+                </td>
+            </tr>
+        `).join('');
+    }
     
     openWeeklyModal(editData = null) {
         document.getElementById('weeklyForm').reset();
         document.getElementById('weeklyRowIndex').value = '';
-        document.getElementById('weeklyAgentComms').value = '';
-        document.getElementById('weeklyLoaderSalary').value = '';
-        document.getElementById('weeklyOtherExp').value = '';
-        document.getElementById('weeklyChipsOut').value = '';
         
         if (editData) {
-            // Edit mode
             document.querySelector('#weeklyModal .modal-title').textContent = 'Edit Weekly Cutoff';
             document.getElementById('weeklyRowIndex').value = editData.rowIndex;
             document.getElementById('weeklyStart').value = formatDateForInput(editData.start);
             document.getElementById('weeklyEnd').value = formatDateForInput(editData.end);
             document.getElementById('weeklyGGR').value = editData.ggr;
-            document.getElementById('weeklyAgentComms').value = editData.agentCommissions;
             document.getElementById('weeklyLoaderSalary').value = editData.loaderSalary;
             document.getElementById('weeklyOtherExp').value = editData.otherExpenses;
-            document.getElementById('weeklyChipsOut').value = editData.chipsOut;
-            
             this.calculateWeeklyFields();
         } else {
-            // Add mode
             document.querySelector('#weeklyModal .modal-title').textContent = 'New Weekly Cutoff';
-            
-            // Set default dates (last 7 days)
             const end = new Date();
             const start = new Date();
             start.setDate(start.getDate() - 6);
-            
             document.getElementById('weeklyStart').value = start.toISOString().split('T')[0];
             document.getElementById('weeklyEnd').value = end.toISOString().split('T')[0];
-            
             this.resetWeeklyCalculations();
         }
         
@@ -730,45 +744,42 @@ class ChipsApp {
         const endDate = document.getElementById('weeklyEnd').value;
         
         if (!startDate || !endDate) {
-            this.showToast('Please select start and end dates', 'warning');
+            this.showToast('Select dates first', 'warning');
             return;
         }
         
         try {
             if (chipsAPI.isConfigured()) {
-                this.showToast('Calculating from Income Tracker...', 'info');
+                this.showToast('Calculating...', 'info');
                 const result = await chipsAPI.calculateWeeklySummary(startDate, endDate);
-                
-                document.getElementById('weeklyAgentComms').value = result.agentCommissions || 0;
                 document.getElementById('weeklyLoaderSalary').value = result.loaderSalary || 0;
                 document.getElementById('weeklyOtherExp').value = result.otherExpenses || 0;
-                document.getElementById('weeklyChipsOut').value = result.chipsOut || 0;
-                
                 this.calculateWeeklyFields();
-                this.showToast('Data calculated from Income Tracker!', 'success');
+                this.showToast('Calculated!', 'success');
             } else {
-                // Demo mode - calculate from local data
+                // Demo mode calculation
                 const start = new Date(startDate);
                 const end = new Date(endDate);
                 end.setHours(23, 59, 59);
                 
-                let agentComms = 0, loaderSalary = 0, otherExp = 0, chipsOut = 0;
+                let loaderSalary = 0, otherExpenses = 0;
                 
-                this.data.income.forEach(item => {
-                    const itemDate = new Date(item.date);
-                    if (itemDate >= start && itemDate <= end) {
-                        agentComms += item.agentCommission || 0;
+                this.data.cfr?.forEach(item => {
+                    const d = new Date(item.date);
+                    if (d >= start && d <= end) {
                         loaderSalary += item.loaderSalary || 0;
-                        otherExp += item.otherExpenses || 0;
-                        chipsOut += item.chipsOut || 0;
                     }
                 });
                 
-                document.getElementById('weeklyAgentComms').value = agentComms;
-                document.getElementById('weeklyLoaderSalary').value = loaderSalary;
-                document.getElementById('weeklyOtherExp').value = otherExp;
-                document.getElementById('weeklyChipsOut').value = chipsOut;
+                this.data.expenses?.forEach(item => {
+                    const d = new Date(item.date);
+                    if (d >= start && d <= end) {
+                        otherExpenses += item.total || 0;
+                    }
+                });
                 
+                document.getElementById('weeklyLoaderSalary').value = loaderSalary;
+                document.getElementById('weeklyOtherExp').value = otherExpenses;
                 this.calculateWeeklyFields();
             }
         } catch (error) {
@@ -778,16 +789,15 @@ class ChipsApp {
     
     calculateWeeklyFields() {
         const ggr = parseFloat(document.getElementById('weeklyGGR').value) || 0;
-        const agentComms = parseFloat(document.getElementById('weeklyAgentComms').value) || 0;
         const loaderSalary = parseFloat(document.getElementById('weeklyLoaderSalary').value) || 0;
         const otherExp = parseFloat(document.getElementById('weeklyOtherExp').value) || 0;
         
-        const netProfit = ggr - agentComms - loaderSalary - otherExp;
+        const netProfit = ggr - loaderSalary - otherExp;
         const roi = ggr > 0 ? (netProfit / ggr) : 0;
         const status = netProfit >= 0 ? 'Profit' : 'Loss';
-        const distributed80 = netProfit * 0.80;
         const team50 = netProfit * 0.50;
         const site35 = netProfit * 0.35;
+        const retained20 = netProfit * 0.20;
         const savings15 = netProfit * 0.15;
         
         document.getElementById('calcNetProfit').textContent = formatCurrency(netProfit);
@@ -795,20 +805,16 @@ class ChipsApp {
         document.getElementById('calcROI').textContent = (roi * 100).toFixed(2) + '%';
         document.getElementById('calcStatus').textContent = status;
         document.getElementById('calcStatus').style.color = status === 'Profit' ? 'var(--green)' : 'var(--red)';
-        document.getElementById('calcDist80').textContent = formatCurrency(distributed80);
         document.getElementById('calcTeam50').textContent = formatCurrency(team50);
         document.getElementById('calcSite35').textContent = formatCurrency(site35);
+        document.getElementById('calcRetained20').textContent = formatCurrency(retained20);
         document.getElementById('calcSavings15').textContent = formatCurrency(savings15);
     }
     
     resetWeeklyCalculations() {
-        document.getElementById('calcNetProfit').textContent = '₱0';
-        document.getElementById('calcROI').textContent = '0%';
-        document.getElementById('calcStatus').textContent = '-';
-        document.getElementById('calcDist80').textContent = '₱0';
-        document.getElementById('calcTeam50').textContent = '₱0';
-        document.getElementById('calcSite35').textContent = '₱0';
-        document.getElementById('calcSavings15').textContent = '₱0';
+        ['calcNetProfit', 'calcROI', 'calcStatus', 'calcTeam50', 'calcSite35', 'calcRetained20', 'calcSavings15'].forEach(id => {
+            document.getElementById(id).textContent = id === 'calcROI' ? '0%' : (id === 'calcStatus' ? '-' : '₱0');
+        });
     }
     
     async saveWeeklySummary() {
@@ -816,133 +822,155 @@ class ChipsApp {
         const start = document.getElementById('weeklyStart').value;
         const end = document.getElementById('weeklyEnd').value;
         const ggr = parseFloat(document.getElementById('weeklyGGR').value) || 0;
-        const agentCommissions = parseFloat(document.getElementById('weeklyAgentComms').value) || 0;
         const loaderSalary = parseFloat(document.getElementById('weeklyLoaderSalary').value) || 0;
         const otherExpenses = parseFloat(document.getElementById('weeklyOtherExp').value) || 0;
-        const chipsOut = parseFloat(document.getElementById('weeklyChipsOut').value) || 0;
         
         if (!start || !end || ggr <= 0) {
-            this.showToast('Please fill in all required fields', 'warning');
+            this.showToast('Fill required fields', 'warning');
             return;
         }
         
-        const data = { 
-            start, 
-            end, 
-            ggr,
-            agentCommissions,
-            loaderSalary,
-            otherExpenses,
-            chipsOut,
-            totalChipsRemaining: this.data.lastNetChips || 0
-        };
+        const data = { start, end, ggr, loaderSalary, otherExpenses };
+        if (rowIndex) data.rowIndex = parseInt(rowIndex);
         
         try {
+            this.showToast('Saving...', 'info');
             if (rowIndex) {
-                // Update existing
-                data.rowIndex = parseInt(rowIndex);
-                this.showToast('Updating weekly summary...', 'info');
                 await chipsAPI.updateWeeklySummary(data);
-                this.showToast('Weekly summary updated!', 'success');
             } else {
-                // Add new
-                this.showToast('Saving weekly summary...', 'info');
                 await chipsAPI.addWeeklySummary(data);
-                this.showToast('Weekly summary saved!', 'success');
             }
-            
             this.closeWeeklyModal();
             await this.syncData();
+            this.showToast('Weekly summary saved!', 'success');
         } catch (error) {
             this.showToast(error.message, 'error');
         }
     }
     
-    // Edit weekly entry
     editWeekly(rowIndex) {
         const item = this.data.weekly.find(w => w.rowIndex === rowIndex);
-        if (item) {
-            this.openWeeklyModal(item);
-        }
+        if (item) this.openWeeklyModal(item);
     }
     
-    // Delete weekly entry
     async deleteWeekly(rowIndex) {
-        if (!confirm('Are you sure you want to delete this weekly summary?')) return;
-        
+        if (!confirm('Delete this weekly summary?')) return;
         try {
-            this.showToast('Deleting...', 'info');
             await chipsAPI.deleteWeeklySummary(rowIndex);
             await this.syncData();
-            this.showToast('Weekly summary deleted!', 'success');
+            this.showToast('Deleted!', 'success');
         } catch (error) {
             this.showToast(error.message, 'error');
         }
     }
     
-    // ===== EXPENSE MODAL =====
+    // ===== FUND TABLES =====
     
-    openExpenseModal(sheetName, rowIndex) {
-        document.getElementById('expenseForm').reset();
-        document.getElementById('expenseSheetName').value = sheetName;
-        document.getElementById('expenseRowIndex').value = rowIndex;
-        document.getElementById('expenseModalTitle').textContent = `Add Expense - ${sheetName}`;
-        document.getElementById('expenseModal').classList.add('active');
+    renderFundTable(type) {
+        const config = {
+            team: { tableId: 'teamTable', allocLabel: 'Team 50%', allocId: 'teamAllocated', spentId: 'teamWithdrawn', remainId: 'teamRemaining' },
+            siteFund: { tableId: 'siteFundTable', allocLabel: 'Site Fund 35%', allocId: 'siteFundAllocated', spentId: 'siteFundSpent', remainId: 'siteFundRemaining' },
+            retained: { tableId: 'retainedTable', allocLabel: 'Retained 20%', allocId: 'retainedAllocated', spentId: 'retainedSpent', remainId: 'retainedRemaining' },
+            savings: { tableId: 'savingsTable', allocLabel: 'Savings 15%', allocId: 'savingsAllocated', spentId: 'savingsWithdrawn', remainId: 'savingsBalance' }
+        };
+        
+        const c = config[type];
+        const tbody = document.getElementById(c.tableId + 'Body');
+        const data = this.data[type] || [];
+        
+        const allocated = data.reduce((sum, f) => sum + (f.allocated || 0), 0);
+        const spent = data.reduce((sum, f) => sum + (f.spent || 0), 0);
+        const remaining = data.reduce((sum, f) => sum + (f.remaining || 0), 0);
+        
+        document.getElementById(c.allocId).textContent = formatCurrency(allocated);
+        document.getElementById(c.spentId).textContent = formatCurrency(spent);
+        document.getElementById(c.remainId).textContent = formatCurrency(remaining);
+        document.getElementById(c.remainId).className = `fund-value ${getValueClass(remaining)}`;
+        
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No data available</td></tr>';
+            return;
+        }
+        
+        const sorted = [...data].sort((a, b) => new Date(b.start) - new Date(a.start));
+        const sheetName = type === 'team' ? 'Team 50%' : (type === 'siteFund' ? 'Site Fund 35%' : (type === 'retained' ? 'Retained 20%' : 'Savings 15%'));
+        
+        tbody.innerHTML = sorted.map(item => `
+            <tr>
+                <td>${formatDate(item.start)}</td>
+                <td>${formatDate(item.end)}</td>
+                <td>${formatCurrency(item.netProfit)}</td>
+                <td class="positive">${formatCurrency(item.allocated)}</td>
+                <td class="negative">${formatCurrency(item.spent)}</td>
+                <td class="${getValueClass(item.remaining)}">${formatCurrency(item.remaining)}</td>
+                <td>
+                    <button class="action-btn add-expense" onclick="app.openFundExpenseModal('${sheetName}', ${item.rowIndex})">+ Add</button>
+                    <button class="action-btn view" onclick="app.viewDetails('${encodeURIComponent(item.spentList || '[]')}')">View</button>
+                </td>
+            </tr>
+        `).join('');
     }
     
-    closeExpenseModal() {
-        document.getElementById('expenseModal').classList.remove('active');
+    openFundExpenseModal(sheetName, rowIndex) {
+        document.getElementById('fundExpenseForm').reset();
+        document.getElementById('fundExpenseSheetName').value = sheetName;
+        document.getElementById('fundExpenseRowIndex').value = rowIndex;
+        document.getElementById('fundExpenseModalTitle').textContent = `Add to ${sheetName}`;
+        document.getElementById('fundExpenseModal').classList.add('active');
     }
     
-    async saveExpense() {
-        const sheetName = document.getElementById('expenseSheetName').value;
-        const rowIndex = parseInt(document.getElementById('expenseRowIndex').value);
-        const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-        const remarks = document.getElementById('expenseRemarks').value.trim();
+    closeFundExpenseModal() {
+        document.getElementById('fundExpenseModal').classList.remove('active');
+    }
+    
+    async saveFundExpense() {
+        const sheetName = document.getElementById('fundExpenseSheetName').value;
+        const rowIndex = parseInt(document.getElementById('fundExpenseRowIndex').value);
+        const amount = parseFloat(document.getElementById('fundExpenseAmount').value) || 0;
+        const remarks = document.getElementById('fundExpenseRemarks').value.trim();
         
         if (amount <= 0 || !remarks) {
-            this.showToast('Please fill in all fields', 'warning');
+            this.showToast('Fill all fields', 'warning');
             return;
         }
         
         try {
-            this.showToast('Adding expense...', 'info');
+            this.showToast('Adding...', 'info');
             await chipsAPI.addExpense(sheetName, { rowIndex, amount, remarks });
-            this.closeExpenseModal();
+            this.closeFundExpenseModal();
             await this.syncData();
-            this.showToast('Expense added!', 'success');
+            this.showToast('Added!', 'success');
         } catch (error) {
             this.showToast(error.message, 'error');
         }
     }
     
-    viewExpenses(spentListJson) {
-        let expenses = [];
+    viewDetails(encodedList) {
+        let items = [];
         try {
-            expenses = JSON.parse(spentListJson || '[]');
-        } catch (e) {}
+            items = JSON.parse(decodeURIComponent(encodedList));
+        } catch(e) {}
         
-        const container = document.getElementById('expensesDetailList');
+        const container = document.getElementById('detailsList');
         
-        if (expenses.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No expenses recorded</p>';
+        if (items.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No details</p>';
         } else {
-            container.innerHTML = expenses.map(exp => `
-                <div class="expense-item">
-                    <div class="expense-info">
-                        <div class="expense-remarks">${exp.remarks}</div>
-                        <div class="expense-date">${exp.date ? formatDate(exp.date) : '-'}</div>
+            container.innerHTML = items.map(item => `
+                <div class="detail-item">
+                    <div class="detail-info">
+                        <div class="detail-remarks">${item.remarks}</div>
                     </div>
-                    <div class="expense-amount">${formatCurrency(exp.amount)}</div>
+                    <div class="detail-amount negative">${formatCurrency(item.amount)}</div>
                 </div>
             `).join('');
         }
         
-        document.getElementById('viewExpensesModal').classList.add('active');
+        document.getElementById('viewDetailsModal').classList.add('active');
     }
     
-    closeViewExpensesModal() {
-        document.getElementById('viewExpensesModal').classList.remove('active');
+    closeViewDetailsModal() {
+        document.getElementById('viewDetailsModal').classList.remove('active');
     }
     
     // ===== SETTINGS =====
@@ -959,24 +987,15 @@ class ChipsApp {
     }
     
     async handleTestConnection() {
-        const webAppUrl = document.getElementById('webAppUrl').value;
+        const url = document.getElementById('webAppUrl').value;
+        if (!url) { this.showToast('Enter URL', 'warning'); return; }
         
-        if (!webAppUrl) {
-            this.showToast('Please enter a Web App URL', 'warning');
-            return;
-        }
-        
-        saveSettings({ ...getSettings(), webAppUrl });
+        saveSettings({ ...getSettings(), webAppUrl: url });
         chipsAPI.updateSettings();
         
-        this.showToast('Testing connection...', 'info');
+        this.showToast('Testing...', 'info');
         const result = await chipsAPI.testConnection();
-        
-        if (result.success) {
-            this.showToast('✅ ' + result.message, 'success');
-        } else {
-            this.showToast('❌ ' + result.message, 'error');
-        }
+        this.showToast(result.success ? '✅ Connected!' : '❌ ' + result.message, result.success ? 'success' : 'error');
     }
     
     handleSaveSettings() {
@@ -988,13 +1007,10 @@ class ChipsApp {
         saveSettings(settings);
         chipsAPI.updateSettings();
         this.setupAutoSync();
-        
         this.closeSettings();
-        this.showToast('Settings saved!', 'success');
+        this.showToast('Saved!', 'success');
         
-        if (settings.webAppUrl) {
-            this.syncData();
-        }
+        if (settings.webAppUrl) this.syncData();
     }
     
     // ===== TOAST =====
@@ -1011,13 +1027,12 @@ class ChipsApp {
         
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100px)';
             setTimeout(() => toast.remove(), 300);
-        }, 4000);
+        }, 3000);
     }
 }
 
-// Initialize app
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new ChipsApp();
 });
