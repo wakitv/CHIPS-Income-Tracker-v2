@@ -383,7 +383,7 @@ class ChipsApp {
         const weekly = this.data.weekly || [];
         
         if (weekly.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; color: var(--text-muted);">No data. Click "New Cutoff" to create.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; color: var(--text-muted);">No data. Click "New Cutoff" to create.</td></tr>';
             return;
         }
         
@@ -407,6 +407,10 @@ class ChipsApp {
                 <td>${formatCurrency(item.team50)}</td>
                 <td>${formatCurrency(item.siteFund35)}</td>
                 <td>${formatCurrency(item.savings15)}</td>
+                <td>
+                    <button class="action-btn edit" onclick="app.editWeekly(${item.rowIndex})">Edit</button>
+                    <button class="action-btn delete" onclick="app.deleteWeekly(${item.rowIndex})">Del</button>
+                </td>
             </tr>
         `).join('');
     }
@@ -678,7 +682,7 @@ class ChipsApp {
     
     // ===== WEEKLY MODAL =====
     
-    openWeeklyModal() {
+    openWeeklyModal(editData = null) {
         document.getElementById('weeklyForm').reset();
         document.getElementById('weeklyRowIndex').value = '';
         document.getElementById('weeklyAgentComms').value = '';
@@ -686,15 +690,34 @@ class ChipsApp {
         document.getElementById('weeklyOtherExp').value = '';
         document.getElementById('weeklyChipsOut').value = '';
         
-        // Set default dates (last 7 days)
-        const end = new Date();
-        const start = new Date();
-        start.setDate(start.getDate() - 6);
+        if (editData) {
+            // Edit mode
+            document.querySelector('#weeklyModal .modal-title').textContent = 'Edit Weekly Cutoff';
+            document.getElementById('weeklyRowIndex').value = editData.rowIndex;
+            document.getElementById('weeklyStart').value = formatDateForInput(editData.start);
+            document.getElementById('weeklyEnd').value = formatDateForInput(editData.end);
+            document.getElementById('weeklyGGR').value = editData.ggr;
+            document.getElementById('weeklyAgentComms').value = editData.agentCommissions;
+            document.getElementById('weeklyLoaderSalary').value = editData.loaderSalary;
+            document.getElementById('weeklyOtherExp').value = editData.otherExpenses;
+            document.getElementById('weeklyChipsOut').value = editData.chipsOut;
+            
+            this.calculateWeeklyFields();
+        } else {
+            // Add mode
+            document.querySelector('#weeklyModal .modal-title').textContent = 'New Weekly Cutoff';
+            
+            // Set default dates (last 7 days)
+            const end = new Date();
+            const start = new Date();
+            start.setDate(start.getDate() - 6);
+            
+            document.getElementById('weeklyStart').value = start.toISOString().split('T')[0];
+            document.getElementById('weeklyEnd').value = end.toISOString().split('T')[0];
+            
+            this.resetWeeklyCalculations();
+        }
         
-        document.getElementById('weeklyStart').value = start.toISOString().split('T')[0];
-        document.getElementById('weeklyEnd').value = end.toISOString().split('T')[0];
-        
-        this.resetWeeklyCalculations();
         document.getElementById('weeklyModal').classList.add('active');
     }
     
@@ -789,23 +812,69 @@ class ChipsApp {
     }
     
     async saveWeeklySummary() {
+        const rowIndex = document.getElementById('weeklyRowIndex').value;
         const start = document.getElementById('weeklyStart').value;
         const end = document.getElementById('weeklyEnd').value;
         const ggr = parseFloat(document.getElementById('weeklyGGR').value) || 0;
+        const agentCommissions = parseFloat(document.getElementById('weeklyAgentComms').value) || 0;
+        const loaderSalary = parseFloat(document.getElementById('weeklyLoaderSalary').value) || 0;
+        const otherExpenses = parseFloat(document.getElementById('weeklyOtherExp').value) || 0;
+        const chipsOut = parseFloat(document.getElementById('weeklyChipsOut').value) || 0;
         
         if (!start || !end || ggr <= 0) {
             this.showToast('Please fill in all required fields', 'warning');
             return;
         }
         
-        const data = { start, end, ggr };
+        const data = { 
+            start, 
+            end, 
+            ggr,
+            agentCommissions,
+            loaderSalary,
+            otherExpenses,
+            chipsOut,
+            totalChipsRemaining: this.data.lastNetChips || 0
+        };
         
         try {
-            this.showToast('Saving weekly summary...', 'info');
-            await chipsAPI.addWeeklySummary(data);
+            if (rowIndex) {
+                // Update existing
+                data.rowIndex = parseInt(rowIndex);
+                this.showToast('Updating weekly summary...', 'info');
+                await chipsAPI.updateWeeklySummary(data);
+                this.showToast('Weekly summary updated!', 'success');
+            } else {
+                // Add new
+                this.showToast('Saving weekly summary...', 'info');
+                await chipsAPI.addWeeklySummary(data);
+                this.showToast('Weekly summary saved!', 'success');
+            }
+            
             this.closeWeeklyModal();
             await this.syncData();
-            this.showToast('Weekly summary saved!', 'success');
+        } catch (error) {
+            this.showToast(error.message, 'error');
+        }
+    }
+    
+    // Edit weekly entry
+    editWeekly(rowIndex) {
+        const item = this.data.weekly.find(w => w.rowIndex === rowIndex);
+        if (item) {
+            this.openWeeklyModal(item);
+        }
+    }
+    
+    // Delete weekly entry
+    async deleteWeekly(rowIndex) {
+        if (!confirm('Are you sure you want to delete this weekly summary?')) return;
+        
+        try {
+            this.showToast('Deleting...', 'info');
+            await chipsAPI.deleteWeeklySummary(rowIndex);
+            await this.syncData();
+            this.showToast('Weekly summary deleted!', 'success');
         } catch (error) {
             this.showToast(error.message, 'error');
         }
