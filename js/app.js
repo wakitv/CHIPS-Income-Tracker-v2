@@ -307,14 +307,23 @@ class ChipsApp {
     
     renderRecentActivity() {
         const container = document.getElementById('recentActivity');
-        const income = this.data.income?.slice(-5).reverse() || [];
+        const income = this.data.income || [];
         
         if (income.length === 0) {
             container.innerHTML = '<div class="recent-item"><p style="color: var(--text-muted); text-align: center; width: 100%;">No recent activity</p></div>';
             return;
         }
         
-        container.innerHTML = income.map(item => `
+        // Sort by date descending, then by rowIndex descending, take top 5
+        const recentIncome = [...income]
+            .sort((a, b) => {
+                const dateCompare = new Date(b.date) - new Date(a.date);
+                if (dateCompare !== 0) return dateCompare;
+                return b.rowIndex - a.rowIndex;
+            })
+            .slice(0, 5);
+        
+        container.innerHTML = recentIncome.map(item => `
             <div class="recent-item">
                 <div class="recent-icon">${item.netIncome >= 0 ? '📈' : '📉'}</div>
                 <div class="recent-info">
@@ -342,7 +351,14 @@ class ChipsApp {
             return;
         }
         
-        tbody.innerHTML = income.map(item => `
+        // Sort by date descending (latest first), then by rowIndex descending
+        const sortedIncome = [...income].sort((a, b) => {
+            const dateCompare = new Date(b.date) - new Date(a.date);
+            if (dateCompare !== 0) return dateCompare;
+            return b.rowIndex - a.rowIndex;
+        });
+        
+        tbody.innerHTML = sortedIncome.map(item => `
             <tr>
                 <td>${formatDate(item.date)}</td>
                 <td>${item.shiftTime}</td>
@@ -371,7 +387,12 @@ class ChipsApp {
             return;
         }
         
-        tbody.innerHTML = weekly.map(item => `
+        // Sort by start date descending (latest first)
+        const sortedWeekly = [...weekly].sort((a, b) => {
+            return new Date(b.start) - new Date(a.start);
+        });
+        
+        tbody.innerHTML = sortedWeekly.map(item => `
             <tr>
                 <td>${formatDate(item.start)}</td>
                 <td>${formatDate(item.end)}</td>
@@ -423,11 +444,16 @@ class ChipsApp {
             return;
         }
         
+        // Sort by start date descending (latest first)
+        const sortedData = [...data].sort((a, b) => {
+            return new Date(b.start) - new Date(a.start);
+        });
+        
         const sourceLabel = type === 'retained' ? 'Net Profit' : 'Distributed 80%';
         const allocLabel = type === 'siteFund' ? 'Site Fund 35%' : (type === 'retained' ? 'Retained 20%' : 'Savings 15%');
         const sheetName = type === 'siteFund' ? 'Site Fund 35%' : (type === 'retained' ? 'Retained 20%' : 'Savings 15%');
         
-        tbody.innerHTML = data.map(item => `
+        tbody.innerHTML = sortedData.map(item => `
             <tr>
                 <td>${formatDate(item.start)}</td>
                 <td>${formatDate(item.end)}</td>
