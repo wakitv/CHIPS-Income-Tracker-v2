@@ -453,9 +453,19 @@ body::before {
     box-shadow: var(--shadow-gold);
 }
 
+.add-btn.secondary {
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+}
+
 .add-btn span {
     font-size: 18px;
     font-weight: 700;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
 }
 
 /* ===== MINI STATS ===== */
@@ -612,6 +622,10 @@ body::before {
     margin-bottom: 24px;
 }
 
+.distribution-grid.four-cols {
+    grid-template-columns: repeat(4, 1fr);
+}
+
 .dist-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -650,6 +664,114 @@ body::before {
     color: var(--text-primary);
     margin-top: 8px;
 }
+
+/* 4 Column Distribution Grid */
+.distribution-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* Add Button Group */
+.add-btn-group {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.add-btn.secondary {
+    background: var(--bg-card);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+}
+
+.add-btn.secondary:hover {
+    background: rgba(255, 215, 0, 0.1);
+}
+
+/* Sub Tabs */
+.sub-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--bg-card);
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.sub-tab {
+    flex: 1;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sub-tab:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.sub-tab.active {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
+    color: var(--gold);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.sub-tab-content {
+    display: none;
+}
+
+.sub-tab-content.active {
+    display: block;
+}
+
+/* Details List */
+.details-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.detail-info {
+    flex: 1;
+}
+
+.detail-remarks {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.detail-date {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.detail-amount {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.detail-amount.positive { color: var(--green); }
+.detail-amount.negative { color: var(--red); }
 
 /* ===== RECENT SECTION ===== */
 .recent-section { margin-bottom: 24px; }
@@ -774,6 +896,26 @@ body::before {
 .action-btn.add-expense { background: rgba(255, 215, 0, 0.15); color: var(--gold); }
 .action-btn.view { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
 .action-btn:hover { opacity: 0.8; }
+
+/* Entry Type Badges */
+.entry-type {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.entry-type.type-cfr {
+    background: rgba(0, 255, 136, 0.15);
+    color: var(--green);
+}
+
+.entry-type.type-expense {
+    background: rgba(255, 71, 87, 0.15);
+    color: var(--red);
+}
 
 /* ===== FUND SUMMARY ===== */
 .fund-summary {
@@ -1384,6 +1526,7 @@ body::before {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .distribution-grid-4 { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 992px) {
@@ -1399,11 +1542,13 @@ body::before {
     :root { --header-height: 56px; }
     .page-title { font-size: 28px; }
     .stats-grid { grid-template-columns: 1fr; }
-    .distribution-grid { grid-template-columns: 1fr; }
+    .distribution-grid { grid-template-columns: repeat(2, 1fr); }
+    .distribution-grid.four-cols { grid-template-columns: repeat(2, 1fr); }
     .fund-summary { grid-template-columns: 1fr; }
     .form-row { grid-template-columns: 1fr; }
     .page-header { flex-direction: column; align-items: flex-start; }
-    .add-btn { margin-left: 0; width: 100%; justify-content: center; }
+    .add-btn { width: 100%; justify-content: center; }
+    .header-buttons { width: 100%; flex-direction: column; margin-left: 0; }
     .chart-container { height: 250px; }
     .modal { border-radius: 20px 20px 0 0; max-height: 85vh; margin-top: auto; }
     .mini-stats { flex-direction: column; }
