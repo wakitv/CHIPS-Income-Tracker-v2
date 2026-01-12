@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CHIPS Tracker">
+    <meta name="description" content="Online Casino Income Tracker - CHIPS VER2">
+    
+    <title>CHIPS | Income Tracker v2</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/icon-192.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash" class="splash">
+        <div class="splash-content">
+            <div class="chip-icon">🎰</div>
+            <h1 class="splash-title">CHIPS</h1>
+            <p class="splash-subtitle">Income Tracker v2.0</p>
+            <div class="loading-bar"><div class="loading-progress"></div></div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="app hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-btn" id="menuBtn">
+                    <span></span><span></span><span></span>
+                </button>
+                <h1 class="logo">CHIPS<span class="version">v2</span></h1>
+            </div>
+            <div class="header-right">
+                <div class="sync-status" id="syncStatus">
+                    <span class="sync-dot"></span>
+                    <span class="sync-text">Ready</span>
+                </div>
+                <button class="refresh-btn" id="refreshBtn" title="Sync Data">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="avatar">🎲</div>
+                    <div class="user-details">
+                        <span class="user-name">CHIPS Admin</span>
+                        <span class="user-role">Full Access</span>
+                    </div>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-tab="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </li>
+                <li class="nav-item" data-tab="income">
+                    <span class="nav-icon">💰</span>
+                    <span class="nav-text">Income Tracker</span>
+                </li>
+                <li class="nav-item" data-tab="weekly">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">Weekly Summary</span>
+                </li>
+                <li class="nav-item" data-tab="sitefund">
+                    <span class="nav-icon">🏦</span>
+                    <span class="nav-text">Site Fund 35%</span>
+                </li>
+                <li class="nav-item" data-tab="retained">
+                    <span class="nav-icon">💼</span>
+                    <span class="nav-text">Retained 20%</span>
+                </li>
+                <li class="nav-item" data-tab="savings">
+                    <span class="nav-icon">🐷</span>
+                    <span class="nav-text">Savings 15%</span>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="settings-btn" id="settingsBtn">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Settings</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Overlay for mobile sidebar -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Tab -->
+            <section class="tab-content active" id="tab-dashboard">
+                <div class="page-header">
+                    <h2 class="page-title">Dashboard</h2>
+                    <p class="page-subtitle">Overview ng performance mo</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card gold">
+                        <div class="stat-icon">💵</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Net Profit</span>
+                            <span class="stat-value" id="totalProfit">₱0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total GGR</span>
+                            <span class="stat-value" id="totalGGR">₱0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card blue">
+                        <div class="stat-icon">🎰</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Chips Remaining</span>
+                            <span class="stat-value" id="totalChips">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Average ROI</span>
+                            <span class="stat-value" id="avgROI">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="chart-section">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Weekly Performance</h3>
+                            <div class="chart-legend">
+                                <span class="legend-item profit"><span class="dot"></span> Profit</span>
+                                <span class="legend-item loss"><span class="dot"></span> Loss</span>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribution Summary -->
+                <div class="distribution-section">
+                    <h3 class="section-title">Fund Distribution</h3>
+                    <div class="distribution-grid">
+                        <div class="dist-card">
+                            <div class="dist-header">
+                                <span class="dist-icon">🏦</span>
+                                <span class="dist-title">Site Fund</span>
+                            </div>
+                            <div class="dist-percent">35%</div>
+                            <div class="dist-amount" id="siteFundTotal">₱0</div>
+                        </div>
+                        <div class="dist-card">
+                            <div class="dist-header">
+                                <span class="dist-icon">💼</span>
+                                <span class="dist-title">Retained</span>
+                            </div>
+                            <div class="dist-percent">20%</div>
+                            <div class="dist-amount" id="retainedTotal">₱0</div>
+                        </div>
+                        <div class="dist-card">
+                            <div class="dist-header">
+                                <span class="dist-icon">🐷</span>
+                                <span class="dist-title">Savings</span>
+                            </div>
+                            <div class="dist-percent">15%</div>
+                            <div class="dist-amount" id="savingsTotal">₱0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="recent-section">
+                    <h3 class="section-title">Recent Activity</h3>
+                    <div class="recent-list" id="recentActivity">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Income Tracker Tab -->
+            <section class="tab-content" id="tab-income">
+                <div class="page-header">
+                    <h2 class="page-title">Income Tracker</h2>
+                    <p class="page-subtitle">Daily shift-based income tracking</p>
+                    <button class="add-btn" id="addIncomeBtn">
+                        <span>+</span> Add Entry
+                    </button>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="mini-stats">
+                    <div class="mini-stat">
+                        <span class="mini-label">Last Net Chips</span>
+                        <span class="mini-value" id="lastNetChips">0</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Today's Income</span>
+                        <span class="mini-value" id="todayIncome">₱0</span>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="table-container">
+                    <table class="data-table" id="incomeTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Shift</th>
+                                <th>CFR</th>
+                                <th>Agent Comm</th>
+                                <th>Loader</th>
+                                <th>Other Exp</th>
+                                <th>Net Income</th>
+                                <th>Chips In</th>
+                                <th>Chips Out</th>
+                                <th>Net Chips</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incomeTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Weekly Summary Tab -->
+            <section class="tab-content" id="tab-weekly">
+                <div class="page-header">
+                    <h2 class="page-title">Weekly Summary</h2>
+                    <p class="page-subtitle">Weekly cutoff performance data</p>
+                    <button class="add-btn" id="addWeeklyBtn">
+                        <span>+</span> New Cutoff
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="weeklyTable">
+                        <thead>
+                            <tr>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>GGR</th>
+                                <th>Agent Comms</th>
+                                <th>Loader</th>
+                                <th>Other Exp</th>
+                                <th>Net Profit</th>
+                                <th>ROI %</th>
+                                <th>Status</th>
+                                <th>Dist 80%</th>
+                                <th>Team 50%</th>
+                                <th>Site 35%</th>
+                                <th>Savings 15%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weeklyTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Site Fund Tab -->
+            <section class="tab-content" id="tab-sitefund">
+                <div class="page-header">
+                    <h2 class="page-title">Site Fund 35%</h2>
+                    <p class="page-subtitle">Track site fund allocation and expenses</p>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="fund-summary">
+                    <div class="fund-stat">
+                        <span class="fund-label">Total Allocated</span>
+                        <span class="fund-value positive" id="siteFundAllocated">₱0</span>
+                    </div>
+                    <div class="fund-stat">
+                        <span class="fund-label">Total Spent</span>
+                        <span class="fund-value negative" id="siteFundSpent">₱0</span>
+                    </div>
+                    <div class="fund-stat">
+                        <span class="fund-label">Remaining Balance</span>
+                        <span class="fund-value" id="siteFundRemaining">₱0</span>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="siteFundTable">
+                        <thead>
+                            <tr>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Distributed 80%</th>
+                                <th>Site Fund 35%</th>
+                                <th>Spent</th>
+                                <th>Remaining</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="siteFundTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Retained Tab -->
+            <section class="tab-content" id="tab-retained">
+                <div class="page-header">
+                    <h2 class="page-title">Retained 20%</h2>
+                    <p class="page-subtitle">Track retained funds for bills and utilities</p>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="fund-summary">
+                    <div class="fund-stat">
+                        <span class="fund-label">Total Retained</span>
+                        <span class="fund-value positive" id="retainedAllocated">₱0</span>
+                    </div>
+                    <div class="fund-stat">
+                        <span class="fund-label">Total Spent</span>
+                        <span class="fund-value negative" id="retainedSpent">₱0</span>
+                    </div>
+                    <div class="fund-stat">
+                        <span class="fund-label">Remaining Balance</span>
+                        <span class="fund-value" id="retainedRemaining">₱0</span>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="retainedTable">
+                        <thead>
+                            <tr>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Net Profit</th>
+                                <th>Retained 20%</th>
+                                <th>Spent</th>
+                                <th>Remaining</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="retainedTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Savings Tab -->
+            <section class="tab-content" id="tab-savings">
+                <div class="page-header">
+                    <h2 class="page-title">Savings 15%</h2>
+                    <p class="page-subtitle">Track savings allocation</p>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="fund-summary">
+                    <div class="fund-stat">
+                        <span class="fund-label">Total Savings</span>
+                        <span class="fund-value positive" id="savingsAllocated">₱0</span>
+                    </div>
+                    <div class="fund-stat">
+                        <span class="fund-label">Total Withdrawn</span>
+                        <span class="fund-value negative" id="savingsWithdrawn">₱0</span>
+                    </div>
+                    <div class="fund-stat">
+                        <span class="fund-label">Current Balance</span>
+                        <span class="fund-value" id="savingsBalance">₱0</span>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="savingsTable">
+                        <thead>
+                            <tr>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Distributed 80%</th>
+                                <th>Savings 15%</th>
+                                <th>Spent</th>
+                                <th>Remaining</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savingsTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation (Mobile) -->
+        <nav class="bottom-nav">
+            <button class="bottom-nav-item active" data-tab="dashboard">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Dashboard</span>
+            </button>
+            <button class="bottom-nav-item" data-tab="income">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label">Income</span>
+            </button>
+            <button class="bottom-nav-item" data-tab="weekly">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">Weekly</span>
+            </button>
+            <button class="bottom-nav-item" data-tab="sitefund">
+                <span class="nav-icon">🏦</span>
+                <span class="nav-label">Funds</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Income Entry Modal -->
+    <div class="modal-overlay" id="incomeModal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title" id="incomeModalTitle">Add Income Entry</h3>
+                <button class="modal-close" onclick="app.closeIncomeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="incomeForm">
+                    <input type="hidden" id="incomeRowIndex">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" class="form-input" id="incomeDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Shift Time</label>
+                            <select class="form-select" id="incomeShift" required>
+                                <option value="12:00PM to 8:00PM">12:00PM to 8:00PM</option>
+                                <option value="8:00PM to 4:00AM">8:00PM to 4:00AM</option>
+                                <option value="4:00AM to 12:00PM">4:00AM to 12:00PM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">💵 Cash For Remittance</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>CFR</label>
+                                <input type="number" class="form-input" id="incomeCFR" step="0.01" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Agent Commission</label>
+                                <input type="number" class="form-input" id="incomeAgentComm" step="0.01" placeholder="0" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Loader Salary</label>
+                            <input type="number" class="form-input" id="incomeLoaderSalary" step="0.01" placeholder="560" value="560">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">📋 Other Expenses (Multiple)</h4>
+                        <div class="multi-input-container" id="otherExpensesContainer">
+                            <div class="multi-input-list" id="otherExpensesList">
+                                <!-- Dynamic items will be added here -->
+                            </div>
+                            <div class="multi-input-add">
+                                <input type="number" class="form-input" id="newExpenseAmount" placeholder="Amount" step="0.01">
+                                <input type="text" class="form-input" id="newExpenseRemarks" placeholder="Remarks (e.g. Groceries)">
+                                <button type="button" class="btn btn-small btn-add" onclick="app.addExpenseItem()">+ Add</button>
+                            </div>
+                        </div>
+                        <div class="calculated-field">
+                            <span>Total Other Expenses:</span>
+                            <span class="calculated-value" id="totalOtherExpenses">₱0</span>
+                        </div>
+                    </div>
+
+                    <div class="form-section highlight">
+                        <div class="calculated-field large">
+                            <span>NET INCOME:</span>
+                            <span class="calculated-value" id="calculatedNetIncome">₱0</span>
+                        </div>
+                        <small class="formula">CFR - Agent Commission - Loader Salary - Other Expenses</small>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">🎰 Chips Tracking</h4>
+                        <div class="multi-input-container" id="chipsInContainer">
+                            <label>Chips In (Multiple)</label>
+                            <div class="auto-fill-notice" id="autoFillNotice">
+                                <span>✨ Auto-filled from last Net Chips: <strong id="autoFillValue">0</strong></span>
+                            </div>
+                            <div class="multi-input-list" id="chipsInList">
+                                <!-- Dynamic items will be added here -->
+                            </div>
+                            <div class="multi-input-add">
+                                <input type="number" class="form-input" id="newChipsInAmount" placeholder="Amount" step="0.01">
+                                <input type="text" class="form-input" id="newChipsInRemarks" placeholder="Remarks (e.g. Starting chips)">
+                                <button type="button" class="btn btn-small btn-add" onclick="app.addChipsInItem()">+ Add</button>
+                            </div>
+                        </div>
+                        <div class="calculated-field">
+                            <span>Total Chips In:</span>
+                            <span class="calculated-value" id="totalChipsIn">₱0</span>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Chips Out</label>
+                            <input type="number" class="form-input" id="incomeChipsOut" step="0.01" placeholder="0" value="0">
+                        </div>
+                    </div>
+
+                    <div class="form-section highlight">
+                        <div class="calculated-field large">
+                            <span>NET CHIPS:</span>
+                            <span class="calculated-value" id="calculatedNetChips">0</span>
+                        </div>
+                        <small class="formula">Chips In - Chips Out</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeIncomeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveIncomeEntry()">💾 Save Entry</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Summary Modal -->
+    <div class="modal-overlay" id="weeklyModal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title">New Weekly Cutoff</h3>
+                <button class="modal-close" onclick="app.closeWeeklyModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="weeklyForm">
+                    <input type="hidden" id="weeklyRowIndex">
+                    
+                    <div class="form-section">
+                        <h4 class="form-section-title">📅 Cutoff Period</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" class="form-input" id="weeklyStart" required>
+                            </div>
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" class="form-input" id="weeklyEnd" required>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-full" onclick="app.calculateFromDates()">
+                            🔄 Calculate from Income Tracker
+                        </button>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">💰 Revenue & Expenses</h4>
+                        <div class="form-group">
+                            <label>GGR (Gross Gaming Revenue)</label>
+                            <input type="number" class="form-input" id="weeklyGGR" step="0.01" placeholder="Enter GGR from casino site" required>
+                            <small class="form-hint">This is the 1-week cutoff sales from the casino site</small>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Agent Commissions</label>
+                                <input type="number" class="form-input" id="weeklyAgentComms" step="0.01" placeholder="0" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Loader Salary</label>
+                                <input type="number" class="form-input" id="weeklyLoaderSalary" step="0.01" placeholder="0" readonly>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Other Expenses</label>
+                                <input type="number" class="form-input" id="weeklyOtherExp" step="0.01" placeholder="0" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Total Chips Out</label>
+                                <input type="number" class="form-input" id="weeklyChipsOut" step="0.01" placeholder="0" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section highlight">
+                        <div class="calculated-grid">
+                            <div class="calc-item">
+                                <span class="calc-label">Net Profit</span>
+                                <span class="calc-value" id="calcNetProfit">₱0</span>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">ROI</span>
+                                <span class="calc-value" id="calcROI">0%</span>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">Status</span>
+                                <span class="calc-value" id="calcStatus">-</span>
+                            </div>
+                        </div>
+                        <hr class="divider">
+                        <h4 style="text-align: center; margin-bottom: 12px;">Distribution Breakdown</h4>
+                        <div class="calculated-grid">
+                            <div class="calc-item">
+                                <span class="calc-label">Distributed 80%</span>
+                                <span class="calc-value" id="calcDist80">₱0</span>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">Team 50%</span>
+                                <span class="calc-value" id="calcTeam50">₱0</span>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">Site Fund 35%</span>
+                                <span class="calc-value" id="calcSite35">₱0</span>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">Savings 15%</span>
+                                <span class="calc-value" id="calcSavings15">₱0</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeWeeklyModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveWeeklySummary()">💾 Save Cutoff</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div class="modal-overlay" id="expenseModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="expenseModalTitle">Add Expense</h3>
+                <button class="modal-close" onclick="app.closeExpenseModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="expenseForm">
+                    <input type="hidden" id="expenseSheetName">
+                    <input type="hidden" id="expenseRowIndex">
+                    
+                    <div class="form-group">
+                        <label>Amount (₱)</label>
+                        <input type="number" class="form-input" id="expenseAmount" step="0.01" placeholder="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Remarks</label>
+                        <input type="text" class="form-input" id="expenseRemarks" placeholder="e.g. Groceries, Bill Payment" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeExpenseModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveExpense()">💾 Add Expense</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Expenses Modal -->
+    <div class="modal-overlay" id="viewExpensesModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Expense Details</h3>
+                <button class="modal-close" onclick="app.closeViewExpensesModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="expenses-list" id="expensesDetailList">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeViewExpensesModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsOverlay">
+        <div class="modal settings-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">⚙️ Settings</h3>
+                <button class="modal-close" id="settingsClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4>Google Apps Script Connection</h4>
+                    <div class="form-group">
+                        <label>Web App URL</label>
+                        <input type="text" id="webAppUrl" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
+                        <small class="form-hint">Deploy your Google Apps Script as a Web App and paste the URL here</small>
+                    </div>
+                    <button class="btn btn-primary" id="testConnection">🔗 Test Connection</button>
+                </div>
+                <div class="settings-section">
+                    <h4>Display Settings</h4>
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <span>Auto-sync (every 30 sec)</span>
+                            <input type="checkbox" id="autoSync" checked>
+                            <span class="toggle-switch"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h4>Setup Instructions</h4>
+                    <div class="instructions-box">
+                        <ol>
+                            <li>Open <a href="https://script.google.com" target="_blank">Google Apps Script</a></li>
+                            <li>Create a new project</li>
+                            <li>Copy the Code.gs content from the downloaded files</li>
+                            <li>Replace SPREADSHEET_ID with your Google Sheet ID</li>
+                            <li>Run the <code>setup()</code> function once</li>
+                            <li>Deploy → New deployment → Web app</li>
+                            <li>Set "Who has access" to "Anyone"</li>
+                            <li>Copy the Web App URL and paste above</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="settingsCancel">Cancel</button>
+                <button class="btn btn-primary" id="settingsSave">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW registered'))
+                    .catch(err => console.log('SW failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
