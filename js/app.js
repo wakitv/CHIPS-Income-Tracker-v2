@@ -795,16 +795,23 @@ class ChipsApp {
         const netProfit = ggr - loaderSalary - otherExp;
         const roi = ggr > 0 ? (netProfit / ggr) : 0;
         const status = netProfit >= 0 ? 'Profit' : 'Loss';
-        const team50 = netProfit * 0.50;
-        const site35 = netProfit * 0.35;
+        
+        // Correct Distribution Formula:
+        // Retained = Net Profit × 20% (set aside first)
+        // Distribution = Net Profit × 80%
+        // From Distribution: Team 50%, Site Fund 35%, Savings 15%
         const retained20 = netProfit * 0.20;
-        const savings15 = netProfit * 0.15;
+        const distribution80 = netProfit * 0.80;
+        const team50 = distribution80 * 0.50;
+        const site35 = distribution80 * 0.35;
+        const savings15 = distribution80 * 0.15;
         
         document.getElementById('calcNetProfit').textContent = formatCurrency(netProfit);
         document.getElementById('calcNetProfit').className = `calc-value ${getValueClass(netProfit)}`;
         document.getElementById('calcROI').textContent = (roi * 100).toFixed(2) + '%';
         document.getElementById('calcStatus').textContent = status;
         document.getElementById('calcStatus').style.color = status === 'Profit' ? 'var(--green)' : 'var(--red)';
+        document.getElementById('calcDist80').textContent = formatCurrency(distribution80);
         document.getElementById('calcTeam50').textContent = formatCurrency(team50);
         document.getElementById('calcSite35').textContent = formatCurrency(site35);
         document.getElementById('calcRetained20').textContent = formatCurrency(retained20);
@@ -812,7 +819,7 @@ class ChipsApp {
     }
     
     resetWeeklyCalculations() {
-        ['calcNetProfit', 'calcROI', 'calcStatus', 'calcTeam50', 'calcSite35', 'calcRetained20', 'calcSavings15'].forEach(id => {
+        ['calcNetProfit', 'calcROI', 'calcStatus', 'calcDist80', 'calcTeam50', 'calcSite35', 'calcRetained20', 'calcSavings15'].forEach(id => {
             document.getElementById(id).textContent = id === 'calcROI' ? '0%' : (id === 'calcStatus' ? '-' : '₱0');
         });
     }
