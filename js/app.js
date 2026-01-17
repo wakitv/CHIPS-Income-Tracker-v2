@@ -92,6 +92,34 @@ class ChipsApp {
         });
     }
     
+    setupDatePickers() {
+        // Setup Flatpickr on all date inputs
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+            // Destroy existing instance if any
+            if (input._flatpickr) {
+                input._flatpickr.destroy();
+            }
+            
+            flatpickr(input, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "M d, Y",
+                theme: "dark",
+                disableMobile: false,
+                animate: true,
+                position: "auto center",
+                monthSelectorType: "static",
+                prevArrow: "◀",
+                nextArrow: "▶",
+                onReady: function(selectedDates, dateStr, instance) {
+                    // Add custom class for styling
+                    instance.calendarContainer.classList.add('chips-calendar');
+                }
+            });
+        });
+    }
+    
     setupEventListeners() {
         // Menu button (mobile)
         document.getElementById('menuBtn').addEventListener('click', () => {
@@ -518,8 +546,11 @@ class ChipsApp {
         this.calculateCFRFields();
         document.getElementById('cfrModal').classList.add('active');
         
-        // Re-setup comma inputs after modal is shown
-        setTimeout(() => this.setupAmountInputs(), 100);
+        // Re-setup inputs after modal is shown
+        setTimeout(() => {
+            this.setupAmountInputs();
+            this.setupDatePickers();
+        }, 100);
     }
     
     closeCFRModal() {
@@ -650,8 +681,11 @@ class ChipsApp {
         this.calculateOtherExpenses();
         document.getElementById('otherExpensesModal').classList.add('active');
         
-        // Setup comma inputs
-        setTimeout(() => this.setupAmountInputs(), 100);
+        // Setup inputs after modal is shown
+        setTimeout(() => {
+            this.setupAmountInputs();
+            this.setupDatePickers();
+        }, 100);
     }
     
     closeOtherExpensesModal() {
@@ -799,6 +833,11 @@ class ChipsApp {
         }
         
         document.getElementById('weeklyModal').classList.add('active');
+        
+        // Setup date pickers after modal is shown
+        setTimeout(() => {
+            this.setupDatePickers();
+        }, 100);
     }
     
     closeWeeklyModal() {
