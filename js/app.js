@@ -228,21 +228,27 @@ class ChipsApp {
     
     async handleRefresh() {
         const btn = document.getElementById('refreshBtn');
-        btn.classList.add('spinning');
+        if (btn) btn.classList.add('spinning');
         await this.syncData();
-        setTimeout(() => btn.classList.remove('spinning'), 1000);
+        setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 1000);
     }
     
     async syncData() {
         const syncStatus = document.getElementById('syncStatus');
-        syncStatus.classList.add('syncing');
-        syncStatus.querySelector('.sync-text').textContent = 'Syncing...';
+        if (syncStatus) {
+            syncStatus.classList.add('syncing');
+            const syncText = syncStatus.querySelector('.sync-text');
+            if (syncText) syncText.textContent = 'Syncing...';
+        }
         
         try {
             if (!chipsAPI.isConfigured()) {
                 this.loadDemoData();
-                syncStatus.classList.remove('syncing');
-                syncStatus.querySelector('.sync-text').textContent = 'Demo Mode';
+                if (syncStatus) {
+                    syncStatus.classList.remove('syncing');
+                    const syncText = syncStatus.querySelector('.sync-text');
+                    if (syncText) syncText.textContent = 'Demo Mode';
+                }
                 this.showToast('Running in Demo Mode', 'warning');
                 return;
             }
@@ -262,8 +268,11 @@ class ChipsApp {
             
             cacheManager.save(this.data);
             
-            syncStatus.classList.remove('syncing', 'error');
-            syncStatus.querySelector('.sync-text').textContent = 'Synced';
+            if (syncStatus) {
+                syncStatus.classList.remove('syncing', 'error');
+                const syncText = syncStatus.querySelector('.sync-text');
+                if (syncText) syncText.textContent = 'Synced';
+            }
             
             const activeTab = document.querySelector('.nav-item.active')?.dataset.tab || 'dashboard';
             this.renderTab(activeTab);
@@ -272,9 +281,12 @@ class ChipsApp {
             
         } catch (error) {
             console.error('Sync error:', error);
-            syncStatus.classList.remove('syncing');
-            syncStatus.classList.add('error');
-            syncStatus.querySelector('.sync-text').textContent = 'Error';
+            if (syncStatus) {
+                syncStatus.classList.remove('syncing');
+                syncStatus.classList.add('error');
+                const syncText = syncStatus.querySelector('.sync-text');
+                if (syncText) syncText.textContent = 'Error';
+            }
             this.showToast(error.message, 'error');
         }
     }
@@ -333,20 +345,22 @@ class ChipsApp {
         const totalChips = this.data.lastNetChips || 0;
         const avgROI = weekly.length > 0 ? (weekly.reduce((sum, w) => sum + (w.roi || 0), 0) / weekly.length) * 100 : 0;
         
-        document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
-        document.getElementById('totalGGR').textContent = formatCurrency(totalGGR);
-        document.getElementById('totalChips').textContent = formatWithCommas(totalChips);
-        document.getElementById('avgROI').textContent = avgROI.toFixed(2) + '%';
+        const el = (id) => document.getElementById(id);
+        
+        if (el('totalProfit')) el('totalProfit').textContent = formatCurrency(totalProfit);
+        if (el('totalGGR')) el('totalGGR').textContent = formatCurrency(totalGGR);
+        if (el('totalChips')) el('totalChips').textContent = formatWithCommas(totalChips);
+        if (el('avgROI')) el('avgROI').textContent = avgROI.toFixed(2) + '%';
         
         const teamTotal = this.data.team?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
         const siteFundTotal = this.data.siteFund?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
         const retainedTotal = this.data.retained?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
         const savingsTotal = this.data.savings?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
         
-        document.getElementById('teamTotal').textContent = formatCurrency(teamTotal);
-        document.getElementById('siteFundTotal').textContent = formatCurrency(siteFundTotal);
-        document.getElementById('retainedTotal').textContent = formatCurrency(retainedTotal);
-        document.getElementById('savingsTotal').textContent = formatCurrency(savingsTotal);
+        if (el('teamTotal')) el('teamTotal').textContent = formatCurrency(teamTotal);
+        if (el('siteFundTotal')) el('siteFundTotal').textContent = formatCurrency(siteFundTotal);
+        if (el('retainedTotal')) el('retainedTotal').textContent = formatCurrency(retainedTotal);
+        if (el('savingsTotal')) el('savingsTotal').textContent = formatCurrency(savingsTotal);
         
         this.renderWeeklyChart();
         this.renderRecentActivity();
@@ -385,6 +399,8 @@ class ChipsApp {
     
     renderRecentActivity() {
         const container = document.getElementById('recentActivity');
+        if (!container) return;
+        
         const cfr = this.data.cfr || [];
         
         if (cfr.length === 0) {
@@ -412,7 +428,13 @@ class ChipsApp {
         this.renderCFRTable();
         this.renderExpensesTable();
         
-        document.getElementById('lastNetChips').textContent = formatWithCommas(this.data.lastNetChips);
+        const lastNetChipsEl = document.getElementById('lastNetChips');
+        const todayCFREl = document.getElementById('todayCFR');
+        const todayExpensesEl = document.getElementById('todayExpenses');
+        
+        if (lastNetChipsEl) {
+            lastNetChipsEl.textContent = formatWithCommas(this.data.lastNetChips);
+        }
         
         // Get today's date - use local date format
         const now = new Date();
@@ -449,14 +471,23 @@ class ChipsApp {
         // Today's Expenses = Loader Salary + Other Expenses
         const todayExp = todayLoaderSalary + todayOtherExp;
         
-        document.getElementById('todayCFR').textContent = formatCurrency(todayCFR);
-        document.getElementById('todayExpenses').textContent = formatCurrency(todayExp);
+        if (todayCFREl) {
+            todayCFREl.textContent = formatCurrency(todayCFR);
+        }
+        if (todayExpensesEl) {
+            todayExpensesEl.textContent = formatCurrency(todayExp);
+        }
         
         console.log('Today:', todayStr, '| CFR:', todayCFR, '| Loader:', todayLoaderSalary, '| OtherExp:', todayOtherExp, '| TotalExp:', todayExp);
     }
     
     renderCFRTable() {
         const container = document.getElementById('cfrGroupedContainer');
+        if (!container) {
+            console.log('cfrGroupedContainer not found');
+            return;
+        }
+        
         const cfr = this.data.cfr || [];
         
         if (cfr.length === 0) {
@@ -582,6 +613,11 @@ class ChipsApp {
     
     renderExpensesTable() {
         const tbody = document.getElementById('expensesTableBody');
+        if (!tbody) {
+            console.log('expensesTableBody not found');
+            return;
+        }
+        
         const expenses = this.data.expenses || [];
         
         if (expenses.length === 0) {
@@ -618,37 +654,43 @@ class ChipsApp {
     openCFRModal(editData = null) {
         this.tempChipsIn = [];
         
-        document.getElementById('cfrForm').reset();
-        document.getElementById('cfrRowIndex').value = '';
-        document.getElementById('chipsInList').innerHTML = '';
+        const form = document.getElementById('cfrForm');
+        const rowIndex = document.getElementById('cfrRowIndex');
+        const chipsInList = document.getElementById('chipsInList');
+        
+        if (form) form.reset();
+        if (rowIndex) rowIndex.value = '';
+        if (chipsInList) chipsInList.innerHTML = '';
         
         // Setup comma formatting
         this.setupAmountInputs();
         
         if (editData) {
-            document.getElementById('cfrModalTitle').textContent = 'Edit CFR Entry';
-            document.getElementById('cfrRowIndex').value = editData.rowIndex;
-            document.getElementById('cfrDate').value = formatDateForInput(editData.date);
-            document.getElementById('cfrShift').value = editData.shiftTime;
-            document.getElementById('cfrAmount').value = formatWithCommas(editData.cfr);
-            document.getElementById('cfrLoaderSalary').value = formatWithCommas(editData.loaderSalary);
-            document.getElementById('endingChips').value = formatWithCommas(editData.endingChips || editData.netChips || 0);
+            const el = (id) => document.getElementById(id);
+            if (el('cfrModalTitle')) el('cfrModalTitle').textContent = 'Edit CFR Entry';
+            if (el('cfrRowIndex')) el('cfrRowIndex').value = editData.rowIndex;
+            if (el('cfrDate')) el('cfrDate').value = formatDateForInput(editData.date);
+            if (el('cfrShift')) el('cfrShift').value = editData.shiftTime;
+            if (el('cfrAmount')) el('cfrAmount').value = formatWithCommas(editData.cfr);
+            if (el('cfrLoaderSalary')) el('cfrLoaderSalary').value = formatWithCommas(editData.loaderSalary);
+            if (el('endingChips')) el('endingChips').value = formatWithCommas(editData.endingChips || editData.netChips || 0);
             
             try {
                 this.tempChipsIn = JSON.parse(editData.chipsInList || '[]');
             } catch(e) {}
             
             this.renderChipsInList();
-            document.getElementById('autoFillNotice').style.display = 'none';
+            if (el('autoFillNotice')) el('autoFillNotice').style.display = 'none';
         } else {
-            document.getElementById('cfrModalTitle').textContent = 'Add CFR Entry';
-            document.getElementById('cfrDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('cfrLoaderSalary').value = '0';
-            document.getElementById('endingChips').value = '';
+            const el = (id) => document.getElementById(id);
+            if (el('cfrModalTitle')) el('cfrModalTitle').textContent = 'Add CFR Entry';
+            if (el('cfrDate')) el('cfrDate').value = new Date().toISOString().split('T')[0];
+            if (el('cfrLoaderSalary')) el('cfrLoaderSalary').value = '0';
+            if (el('endingChips')) el('endingChips').value = '';
             
             const lastNetChips = this.data.lastNetChips || 0;
-            document.getElementById('autoFillValue').textContent = formatWithCommas(lastNetChips);
-            document.getElementById('autoFillNotice').style.display = lastNetChips > 0 ? 'block' : 'none';
+            if (el('autoFillValue')) el('autoFillValue').textContent = formatWithCommas(lastNetChips);
+            if (el('autoFillNotice')) el('autoFillNotice').style.display = lastNetChips > 0 ? 'block' : 'none';
             
             if (lastNetChips > 0) {
                 this.tempChipsIn = [{ amount: lastNetChips, remarks: 'Starting Chips' }];
@@ -657,7 +699,8 @@ class ChipsApp {
         }
         
         this.calculateCFRFields();
-        document.getElementById('cfrModal').classList.add('active');
+        const modal = document.getElementById('cfrModal');
+        if (modal) modal.classList.add('active');
         
         // Re-setup inputs after modal is shown
         setTimeout(() => {
@@ -667,12 +710,16 @@ class ChipsApp {
     }
     
     closeCFRModal() {
-        document.getElementById('cfrModal').classList.remove('active');
+        const modal = document.getElementById('cfrModal');
+        if (modal) modal.classList.remove('active');
     }
     
     addChipsInItem() {
-        const amount = parseFormattedNumber(document.getElementById('newChipsInAmount').value);
-        const remarks = document.getElementById('newChipsInRemarks').value.trim();
+        const amountEl = document.getElementById('newChipsInAmount');
+        const remarksEl = document.getElementById('newChipsInRemarks');
+        
+        const amount = parseFormattedNumber(amountEl?.value);
+        const remarks = remarksEl?.value?.trim() || '';
         
         if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
         
@@ -680,8 +727,8 @@ class ChipsApp {
         this.renderChipsInList();
         this.calculateCFRFields();
         
-        document.getElementById('newChipsInAmount').value = '';
-        document.getElementById('newChipsInRemarks').value = '';
+        if (amountEl) amountEl.value = '';
+        if (remarksEl) remarksEl.value = '';
     }
     
     removeChipsInItem(index) {
@@ -691,7 +738,10 @@ class ChipsApp {
     }
     
     renderChipsInList() {
-        document.getElementById('chipsInList').innerHTML = this.tempChipsIn.map((item, i) => `
+        const list = document.getElementById('chipsInList');
+        if (!list) return;
+        
+        list.innerHTML = this.tempChipsIn.map((item, i) => `
             <div class="multi-input-item">
                 <span class="item-amount">${formatWithCommas(item.amount)}</span>
                 <span class="item-remarks">${item.remarks}</span>
@@ -702,13 +752,17 @@ class ChipsApp {
     
     calculateCFRFields() {
         const totalChipsIn = this.tempChipsIn.reduce((sum, item) => sum + item.amount, 0);
-        const endingChips = parseFormattedNumber(document.getElementById('endingChips')?.value);
+        const endingChipsEl = document.getElementById('endingChips');
+        const endingChips = parseFormattedNumber(endingChipsEl?.value);
         
         // NET CHIPS = Ending Chips directly
         const netChips = endingChips;
         
-        document.getElementById('totalChipsIn').textContent = formatWithCommas(totalChipsIn);
-        document.getElementById('calculatedNetChips').textContent = formatWithCommas(netChips);
+        const totalEl = document.getElementById('totalChipsIn');
+        const netEl = document.getElementById('calculatedNetChips');
+        
+        if (totalEl) totalEl.textContent = formatWithCommas(totalChipsIn);
+        if (netEl) netEl.textContent = formatWithCommas(netChips);
     }
     
     async saveCFREntry() {
@@ -772,14 +826,16 @@ class ChipsApp {
     openOtherExpensesModal(editData = null) {
         this.tempOtherExpenses = [];
         
-        document.getElementById('otherExpensesForm').reset();
-        document.getElementById('otherExpensesRowIndex').value = '';
-        document.getElementById('otherExpensesList').innerHTML = '';
+        const el = (id) => document.getElementById(id);
+        
+        if (el('otherExpensesForm')) el('otherExpensesForm').reset();
+        if (el('otherExpensesRowIndex')) el('otherExpensesRowIndex').value = '';
+        if (el('otherExpensesList')) el('otherExpensesList').innerHTML = '';
         
         if (editData) {
-            document.getElementById('otherExpensesModalTitle').textContent = 'Edit Other Expenses';
-            document.getElementById('otherExpensesRowIndex').value = editData.rowIndex;
-            document.getElementById('otherExpensesDate').value = formatDateForInput(editData.date);
+            if (el('otherExpensesModalTitle')) el('otherExpensesModalTitle').textContent = 'Edit Other Expenses';
+            if (el('otherExpensesRowIndex')) el('otherExpensesRowIndex').value = editData.rowIndex;
+            if (el('otherExpensesDate')) el('otherExpensesDate').value = formatDateForInput(editData.date);
             
             try {
                 this.tempOtherExpenses = JSON.parse(editData.expensesList || '[]');
@@ -787,12 +843,12 @@ class ChipsApp {
             
             this.renderOtherExpensesList();
         } else {
-            document.getElementById('otherExpensesModalTitle').textContent = 'Add Other Expenses';
-            document.getElementById('otherExpensesDate').value = new Date().toISOString().split('T')[0];
+            if (el('otherExpensesModalTitle')) el('otherExpensesModalTitle').textContent = 'Add Other Expenses';
+            if (el('otherExpensesDate')) el('otherExpensesDate').value = new Date().toISOString().split('T')[0];
         }
         
         this.calculateOtherExpenses();
-        document.getElementById('otherExpensesModal').classList.add('active');
+        if (el('otherExpensesModal')) el('otherExpensesModal').classList.add('active');
         
         // Setup inputs after modal is shown
         setTimeout(() => {
@@ -802,12 +858,16 @@ class ChipsApp {
     }
     
     closeOtherExpensesModal() {
-        document.getElementById('otherExpensesModal').classList.remove('active');
+        const modal = document.getElementById('otherExpensesModal');
+        if (modal) modal.classList.remove('active');
     }
     
     addExpenseItem() {
-        const amount = parseFormattedNumber(document.getElementById('newExpenseAmount').value);
-        const remarks = document.getElementById('newExpenseRemarks').value.trim();
+        const amountEl = document.getElementById('newExpenseAmount');
+        const remarksEl = document.getElementById('newExpenseRemarks');
+        
+        const amount = parseFormattedNumber(amountEl?.value);
+        const remarks = remarksEl?.value?.trim() || '';
         
         if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
         
@@ -815,8 +875,8 @@ class ChipsApp {
         this.renderOtherExpensesList();
         this.calculateOtherExpenses();
         
-        document.getElementById('newExpenseAmount').value = '';
-        document.getElementById('newExpenseRemarks').value = '';
+        if (amountEl) amountEl.value = '';
+        if (remarksEl) remarksEl.value = '';
     }
     
     removeExpenseItem(index) {
@@ -826,7 +886,10 @@ class ChipsApp {
     }
     
     renderOtherExpensesList() {
-        document.getElementById('otherExpensesList').innerHTML = this.tempOtherExpenses.map((item, i) => `
+        const list = document.getElementById('otherExpensesList');
+        if (!list) return;
+        
+        list.innerHTML = this.tempOtherExpenses.map((item, i) => `
             <div class="multi-input-item">
                 <span class="item-amount">${formatCurrency(item.amount)}</span>
                 <span class="item-remarks">${item.remarks}</span>
@@ -837,7 +900,8 @@ class ChipsApp {
     
     calculateOtherExpenses() {
         const total = this.tempOtherExpenses.reduce((sum, item) => sum + item.amount, 0);
-        document.getElementById('totalOtherExpenses').textContent = formatCurrency(total);
+        const el = document.getElementById('totalOtherExpenses');
+        if (el) el.textContent = formatCurrency(total);
     }
     
     async saveOtherExpensesEntry() {
@@ -891,6 +955,8 @@ class ChipsApp {
     
     renderWeeklyTable() {
         const tbody = document.getElementById('weeklyTableBody');
+        if (!tbody) return;
+        
         const weekly = this.data.weekly || [];
         
         if (weekly.length === 0) {
@@ -1101,16 +1167,21 @@ class ChipsApp {
         
         const c = config[type];
         const tbody = document.getElementById(c.tableId + 'Body');
+        if (!tbody) return;
+        
         const data = this.data[type] || [];
         
         const allocated = data.reduce((sum, f) => sum + (f.allocated || 0), 0);
         const spent = data.reduce((sum, f) => sum + (f.spent || 0), 0);
         const remaining = data.reduce((sum, f) => sum + (f.remaining || 0), 0);
         
-        document.getElementById(c.allocId).textContent = formatCurrency(allocated);
-        document.getElementById(c.spentId).textContent = formatCurrency(spent);
-        document.getElementById(c.remainId).textContent = formatCurrency(remaining);
-        document.getElementById(c.remainId).className = `fund-value ${getValueClass(remaining)}`;
+        const el = (id) => document.getElementById(id);
+        if (el(c.allocId)) el(c.allocId).textContent = formatCurrency(allocated);
+        if (el(c.spentId)) el(c.spentId).textContent = formatCurrency(spent);
+        if (el(c.remainId)) {
+            el(c.remainId).textContent = formatCurrency(remaining);
+            el(c.remainId).className = `fund-value ${getValueClass(remaining)}`;
+        }
         
         if (data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No data available</td></tr>';
