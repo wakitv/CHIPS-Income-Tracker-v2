@@ -17,6 +17,28 @@ function parseFormattedNumber(str) {
     return parseFloat(String(str).replace(/,/g, '')) || 0;
 }
 
+// Format date long (e.g., "January 17, 2026")
+function formatDateLong(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+}
+
+// Get shift label (short version)
+function getShiftLabel(shift) {
+    const labels = {
+        '12:00PM to 8:00PM': '12PM - 8PM',
+        '8:00PM to 4:00AM': '8PM - 4AM',
+        '4:00AM to 12:00PM': '4AM - 12PM'
+    };
+    return labels[shift] || shift;
+}
+
 // Setup comma formatting on input
 function setupCommaInput(input) {
     if (!input) return;
@@ -392,24 +414,21 @@ class ChipsApp {
         
         document.getElementById('lastNetChips').textContent = formatWithCommas(this.data.lastNetChips);
         
-        // Get today's date in YYYY-MM-DD format
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
+        // Get today's date - use local date format
+        const now = new Date();
+        const todayStr = now.getFullYear() + '-' + 
+                        String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(now.getDate()).padStart(2, '0');
         
-        // Helper function to check if date matches today
-        const isToday = (dateStr) => {
-            if (!dateStr) return false;
-            const d = new Date(dateStr);
-            return d.toISOString().split('T')[0] === todayStr;
-        };
-        
-        // Calculate Today's CFR
+        // Calculate Today's CFR and Expenses
         let todayCFR = 0;
         let todayLoaderSalary = 0;
         
         if (this.data.cfr && this.data.cfr.length > 0) {
             this.data.cfr.forEach(c => {
-                if (isToday(c.date)) {
+                // Normalize the date for comparison
+                const entryDate = c.date ? c.date.split('T')[0] : '';
+                if (entryDate === todayStr) {
                     todayCFR += parseFloat(c.cfr) || 0;
                     todayLoaderSalary += parseFloat(c.loaderSalary) || 0;
                 }
@@ -420,7 +439,8 @@ class ChipsApp {
         let todayOtherExp = 0;
         if (this.data.expenses && this.data.expenses.length > 0) {
             this.data.expenses.forEach(e => {
-                if (isToday(e.date)) {
+                const entryDate = e.date ? e.date.split('T')[0] : '';
+                if (entryDate === todayStr) {
                     todayOtherExp += parseFloat(e.total) || 0;
                 }
             });
@@ -432,39 +452,132 @@ class ChipsApp {
         document.getElementById('todayCFR').textContent = formatCurrency(todayCFR);
         document.getElementById('todayExpenses').textContent = formatCurrency(todayExp);
         
-        // Debug log (you can remove this later)
-        console.log('Today:', todayStr);
-        console.log('Today Loader Salary:', todayLoaderSalary);
-        console.log('Today Other Expenses:', todayOtherExp);
-        console.log('Today Total Expenses:', todayExp);
+        console.log('Today:', todayStr, '| CFR:', todayCFR, '| Loader:', todayLoaderSalary, '| OtherExp:', todayOtherExp, '| TotalExp:', todayExp);
     }
     
     renderCFRTable() {
-        const tbody = document.getElementById('cfrTableBody');
+        const container = document.getElementById('cfrGroupedContainer');
         const cfr = this.data.cfr || [];
         
         if (cfr.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No CFR entries. Click "+ CFR Entry" to add.</td></tr>';
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p>No CFR entries. Click "+ CFR Entry" to add.</p>
+                </div>
+            `;
             return;
         }
         
-        const sorted = [...cfr].sort((a, b) => new Date(b.date) - new Date(a.date) || b.rowIndex - a.rowIndex);
+        // Group entries by date
+        const grouped = {};
+        cfr.forEach(item => {
+            const dateKey = item.date ? item.date.split('T')[0] : 'Unknown';
+            if (!grouped[dateKey]) {
+                grouped[dateKey] = [];
+            }
+            grouped[dateKey].push(item);
+        });
         
-        tbody.innerHTML = sorted.map(item => `
-            <tr>
-                <td>${formatDate(item.date)}</td>
-                <td>${item.shiftTime}</td>
-                <td class="positive">${formatWithCommas(item.cfr)}</td>
-                <td>${formatWithCommas(item.loaderSalary)}</td>
-                <td>${formatWithCommas(item.chipsIn)}</td>
-                <td>${formatWithCommas(item.endingChips || item.chipsOut || 0)}</td>
-                <td class="${getValueClass(item.netChips)}">${formatWithCommas(item.netChips)}</td>
-                <td>
-                    <button class="action-btn edit" onclick="app.editCFR(${item.rowIndex})">Edit</button>
-                    <button class="action-btn delete" onclick="app.deleteCFR(${item.rowIndex})">Del</button>
-                </td>
-            </tr>
-        `).join('');
+        // Sort dates descending (newest first)
+        const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+        
+        // Define shift order
+        const shiftOrder = ['12:00PM to 8:00PM', '8:00PM to 4:00AM', '4:00AM to 12:00PM'];
+        
+        // Build HTML
+        let html = '';
+        
+        sortedDates.forEach(dateKey => {
+            const entries = grouped[dateKey];
+            
+            // Sort entries by shift order
+            entries.sort((a, b) => {
+                return shiftOrder.indexOf(a.shiftTime) - shiftOrder.indexOf(b.shiftTime);
+            });
+            
+            // Calculate daily totals
+            const dailyCFR = entries.reduce((sum, e) => sum + (parseFloat(e.cfr) || 0), 0);
+            const dailyLoader = entries.reduce((sum, e) => sum + (parseFloat(e.loaderSalary) || 0), 0);
+            
+            html += `
+                <div class="date-group">
+                    <div class="date-group-header">
+                        <div class="date-group-title">
+                            <span class="date-icon">📅</span>
+                            <span class="date-text">${formatDateLong(dateKey)}</span>
+                        </div>
+                        <div class="date-group-summary">
+                            <span class="summary-item">CFR: <strong class="positive">${formatCurrency(dailyCFR)}</strong></span>
+                            <span class="summary-item">Loader: <strong>${formatCurrency(dailyLoader)}</strong></span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table shift-table">
+                            <thead>
+                                <tr>
+                                    <th>Shift</th>
+                                    <th>CFR/Chips Out</th>
+                                    <th>Loader</th>
+                                    <th>Chips In</th>
+                                    <th>Ending</th>
+                                    <th>Net Chips</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            // Add each shift (show all 3 shifts, even if empty)
+            shiftOrder.forEach(shift => {
+                const entry = entries.find(e => e.shiftTime === shift);
+                
+                if (entry) {
+                    html += `
+                        <tr>
+                            <td><span class="shift-badge">${getShiftLabel(shift)}</span></td>
+                            <td class="positive">${formatWithCommas(entry.cfr)}</td>
+                            <td>${formatWithCommas(entry.loaderSalary)}</td>
+                            <td>${formatWithCommas(entry.chipsIn)}</td>
+                            <td>${formatWithCommas(entry.endingChips || 0)}</td>
+                            <td class="${getValueClass(entry.netChips)}">${formatWithCommas(entry.netChips)}</td>
+                            <td>
+                                <button class="action-btn edit" onclick="app.editCFR(${entry.rowIndex})">Edit</button>
+                                <button class="action-btn delete" onclick="app.deleteCFR(${entry.rowIndex})">Del</button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr class="empty-shift">
+                            <td><span class="shift-badge empty">${getShiftLabel(shift)}</span></td>
+                            <td colspan="6" class="no-entry">
+                                <button class="add-shift-btn" onclick="app.openCFRModalWithDate('${dateKey}', '${shift}')">+ Add Entry</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    openCFRModalWithDate(date, shift) {
+        this.openCFRModal();
+        document.getElementById('cfrDate').value = date;
+        document.getElementById('cfrShift').value = shift;
+        
+        // Re-setup date picker with the value
+        setTimeout(() => {
+            this.setupDatePickers();
+        }, 150);
     }
     
     renderExpensesTable() {
