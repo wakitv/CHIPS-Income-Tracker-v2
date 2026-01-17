@@ -366,7 +366,11 @@ class ChipsApp {
         
         const today = new Date().toISOString().split('T')[0];
         const todayCFR = this.data.cfr?.filter(c => c.date === today).reduce((sum, c) => sum + (c.cfr || 0), 0) || 0;
-        const todayExp = this.data.expenses?.filter(e => e.date === today).reduce((sum, e) => sum + (e.total || 0), 0) || 0;
+        
+        // Today's Expenses = Loader Salary (from CFR) + Other Expenses
+        const todayLoaderSalary = this.data.cfr?.filter(c => c.date === today).reduce((sum, c) => sum + (c.loaderSalary || 0), 0) || 0;
+        const todayOtherExp = this.data.expenses?.filter(e => e.date === today).reduce((sum, e) => sum + (e.total || 0), 0) || 0;
+        const todayExp = todayLoaderSalary + todayOtherExp;
         
         document.getElementById('todayCFR').textContent = formatCurrency(todayCFR);
         document.getElementById('todayExpenses').textContent = formatCurrency(todayExp);
