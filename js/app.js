@@ -292,29 +292,35 @@ class ChipsApp {
     }
     
     loadDemoData() {
+        // Use today's date for demo data
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().split('T')[0];
+        
         this.data = {
             cfr: [
-                { rowIndex: 2, date: '2025-01-01', shiftTime: '12:00PM to 8:00PM', cfr: 25000, loaderSalary: 0, chipsIn: 100000, chipsInList: '[{"amount":100000,"remarks":"Starting Chips"}]', endingChips: 75000, netChips: 75000 },
-                { rowIndex: 3, date: '2025-01-02', shiftTime: '8:00PM to 4:00AM', cfr: 30000, loaderSalary: 0, chipsIn: 75000, chipsInList: '[{"amount":75000,"remarks":"Starting Chips"}]', endingChips: 45000, netChips: 45000 }
+                { rowIndex: 2, date: todayStr, shiftTime: '12:00PM to 8:00PM', cfr: 25000, loaderSalary: 560, chipsIn: 100000, chipsInList: '[{"amount":100000,"remarks":"Starting Chips"}]', endingChips: 75000, netChips: 75000 },
+                { rowIndex: 3, date: todayStr, shiftTime: '8:00PM to 4:00AM', cfr: 30000, loaderSalary: 560, chipsIn: 75000, chipsInList: '[{"amount":75000,"remarks":"Starting Chips"}]', endingChips: 45000, netChips: 45000 },
+                { rowIndex: 4, date: yesterdayStr, shiftTime: '12:00PM to 8:00PM', cfr: 20000, loaderSalary: 560, chipsIn: 80000, chipsInList: '[{"amount":80000,"remarks":"Starting Chips"}]', endingChips: 60000, netChips: 60000 }
             ],
             expenses: [
-                { rowIndex: 2, date: '2025-01-01', total: 5000, expensesList: '[{"amount":3000,"remarks":"Groceries"},{"amount":2000,"remarks":"Gas"}]' },
-                { rowIndex: 3, date: '2025-01-02', total: 2500, expensesList: '[{"amount":2500,"remarks":"Load"}]' }
+                { rowIndex: 2, date: todayStr, total: 5000, expensesList: '[{"amount":3000,"remarks":"Groceries"},{"amount":2000,"remarks":"Gas"}]' },
+                { rowIndex: 3, date: yesterdayStr, total: 2500, expensesList: '[{"amount":2500,"remarks":"Load"}]' }
             ],
             weekly: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', ggr: 500000, loaderSalary: 0, otherExpenses: 7500, netProfit: 492500, roi: 0.985, status: 'Profit', team50: 197000, siteFund35: 137900, retained20: 98500, savings15: 59100 }
+                { rowIndex: 2, start: yesterdayStr, end: todayStr, ggr: 500000, loaderSalary: 1680, otherExpenses: 7500, netProfit: 490820, roi: 0.98, status: 'Profit', team50: 196328, siteFund35: 137430, retained20: 98164, savings15: 58898 }
             ],
             team: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 492500, allocated: 197000, spent: 50000, spentList: '[{"amount":50000,"remarks":"Withdrawal"}]', remaining: 147000 }
+                { rowIndex: 2, start: yesterdayStr, end: todayStr, netProfit: 490820, allocated: 196328, spent: 50000, spentList: '[{"amount":50000,"remarks":"Withdrawal"}]', remaining: 146328 }
             ],
             siteFund: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 492500, allocated: 137900, spent: 10000, spentList: '[{"amount":10000,"remarks":"Office"}]', remaining: 127900 }
+                { rowIndex: 2, start: yesterdayStr, end: todayStr, netProfit: 490820, allocated: 137430, spent: 10000, spentList: '[{"amount":10000,"remarks":"Office"}]', remaining: 127430 }
             ],
             retained: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 492500, allocated: 98500, spent: 15000, spentList: '[{"amount":15000,"remarks":"Bills"}]', remaining: 83500 }
+                { rowIndex: 2, start: yesterdayStr, end: todayStr, netProfit: 490820, allocated: 98164, spent: 15000, spentList: '[{"amount":15000,"remarks":"Bills"}]', remaining: 83164 }
             ],
             savings: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 492500, allocated: 59100, spent: 0, spentList: '[]', remaining: 59100 }
+                { rowIndex: 2, start: yesterdayStr, end: todayStr, netProfit: 490820, allocated: 58898, spent: 0, spentList: '[]', remaining: 58898 }
             ],
             lastNetChips: 45000
         };
@@ -436,11 +442,45 @@ class ChipsApp {
             lastNetChipsEl.textContent = formatWithCommas(this.data.lastNetChips);
         }
         
-        // Get today's date - use local date format
-        const now = new Date();
-        const todayStr = now.getFullYear() + '-' + 
-                        String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                        String(now.getDate()).padStart(2, '0');
+        // Get today's date normalized
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayTime = today.getTime();
+        
+        // Helper function to normalize any date format to compare
+        const normalizeDate = (dateStr) => {
+            if (!dateStr) return null;
+            try {
+                // Handle different date formats
+                let d;
+                if (typeof dateStr === 'string') {
+                    // Remove time portion if exists
+                    const cleanDate = dateStr.split('T')[0];
+                    
+                    // Check if it's in YYYY-MM-DD format
+                    if (cleanDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        const parts = cleanDate.split('-');
+                        d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    } 
+                    // Check if it's in M/D/YYYY or MM/DD/YYYY format
+                    else if (cleanDate.includes('/')) {
+                        const parts = cleanDate.split('/');
+                        d = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+                    }
+                    else {
+                        d = new Date(dateStr);
+                    }
+                } else {
+                    d = new Date(dateStr);
+                }
+                
+                d.setHours(0, 0, 0, 0);
+                return d.getTime();
+            } catch (e) {
+                console.log('Date parse error:', dateStr, e);
+                return null;
+            }
+        };
         
         // Calculate Today's CFR and Expenses
         let todayCFR = 0;
@@ -448,9 +488,10 @@ class ChipsApp {
         
         if (this.data.cfr && this.data.cfr.length > 0) {
             this.data.cfr.forEach(c => {
-                // Normalize the date for comparison
-                const entryDate = c.date ? c.date.split('T')[0] : '';
-                if (entryDate === todayStr) {
+                const entryTime = normalizeDate(c.date);
+                console.log('CFR Entry:', c.date, '-> normalized:', entryTime, '| today:', todayTime, '| match:', entryTime === todayTime);
+                
+                if (entryTime === todayTime) {
                     todayCFR += parseFloat(c.cfr) || 0;
                     todayLoaderSalary += parseFloat(c.loaderSalary) || 0;
                 }
@@ -461,8 +502,8 @@ class ChipsApp {
         let todayOtherExp = 0;
         if (this.data.expenses && this.data.expenses.length > 0) {
             this.data.expenses.forEach(e => {
-                const entryDate = e.date ? e.date.split('T')[0] : '';
-                if (entryDate === todayStr) {
+                const entryTime = normalizeDate(e.date);
+                if (entryTime === todayTime) {
                     todayOtherExp += parseFloat(e.total) || 0;
                 }
             });
@@ -478,7 +519,13 @@ class ChipsApp {
             todayExpensesEl.textContent = formatCurrency(todayExp);
         }
         
-        console.log('Today:', todayStr, '| CFR:', todayCFR, '| Loader:', todayLoaderSalary, '| OtherExp:', todayOtherExp, '| TotalExp:', todayExp);
+        console.log('=== TODAY SUMMARY ===');
+        console.log('Today:', today.toDateString());
+        console.log('CFR entries:', this.data.cfr?.length || 0);
+        console.log('Today CFR:', todayCFR);
+        console.log('Today Loader Salary:', todayLoaderSalary);
+        console.log('Today Other Expenses:', todayOtherExp);
+        console.log('Today TOTAL Expenses:', todayExp);
     }
     
     renderCFRTable() {
@@ -499,10 +546,32 @@ class ChipsApp {
             return;
         }
         
+        // Helper to normalize date to YYYY-MM-DD string
+        const normalizeDateStr = (dateStr) => {
+            if (!dateStr) return 'Unknown';
+            try {
+                let d;
+                if (typeof dateStr === 'string') {
+                    const cleanDate = dateStr.split('T')[0];
+                    if (cleanDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        return cleanDate;
+                    } else if (cleanDate.includes('/')) {
+                        const parts = cleanDate.split('/');
+                        const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                        return `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+                    }
+                }
+                d = new Date(dateStr);
+                return d.toISOString().split('T')[0];
+            } catch (e) {
+                return 'Unknown';
+            }
+        };
+        
         // Group entries by date
         const grouped = {};
         cfr.forEach(item => {
-            const dateKey = item.date ? item.date.split('T')[0] : 'Unknown';
+            const dateKey = normalizeDateStr(item.date);
             if (!grouped[dateKey]) {
                 grouped[dateKey] = [];
             }
