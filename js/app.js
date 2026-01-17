@@ -364,16 +364,51 @@ class ChipsApp {
         
         document.getElementById('lastNetChips').textContent = formatWithCommas(this.data.lastNetChips);
         
-        const today = new Date().toISOString().split('T')[0];
-        const todayCFR = this.data.cfr?.filter(c => c.date === today).reduce((sum, c) => sum + (c.cfr || 0), 0) || 0;
+        // Get today's date in YYYY-MM-DD format
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
         
-        // Today's Expenses = Loader Salary (from CFR) + Other Expenses
-        const todayLoaderSalary = this.data.cfr?.filter(c => c.date === today).reduce((sum, c) => sum + (c.loaderSalary || 0), 0) || 0;
-        const todayOtherExp = this.data.expenses?.filter(e => e.date === today).reduce((sum, e) => sum + (e.total || 0), 0) || 0;
+        // Helper function to check if date matches today
+        const isToday = (dateStr) => {
+            if (!dateStr) return false;
+            const d = new Date(dateStr);
+            return d.toISOString().split('T')[0] === todayStr;
+        };
+        
+        // Calculate Today's CFR
+        let todayCFR = 0;
+        let todayLoaderSalary = 0;
+        
+        if (this.data.cfr && this.data.cfr.length > 0) {
+            this.data.cfr.forEach(c => {
+                if (isToday(c.date)) {
+                    todayCFR += parseFloat(c.cfr) || 0;
+                    todayLoaderSalary += parseFloat(c.loaderSalary) || 0;
+                }
+            });
+        }
+        
+        // Calculate Today's Other Expenses
+        let todayOtherExp = 0;
+        if (this.data.expenses && this.data.expenses.length > 0) {
+            this.data.expenses.forEach(e => {
+                if (isToday(e.date)) {
+                    todayOtherExp += parseFloat(e.total) || 0;
+                }
+            });
+        }
+        
+        // Today's Expenses = Loader Salary + Other Expenses
         const todayExp = todayLoaderSalary + todayOtherExp;
         
         document.getElementById('todayCFR').textContent = formatCurrency(todayCFR);
         document.getElementById('todayExpenses').textContent = formatCurrency(todayExp);
+        
+        // Debug log (you can remove this later)
+        console.log('Today:', todayStr);
+        console.log('Today Loader Salary:', todayLoaderSalary);
+        console.log('Today Other Expenses:', todayOtherExp);
+        console.log('Today Total Expenses:', todayExp);
     }
     
     renderCFRTable() {
