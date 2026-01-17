@@ -2,6 +2,41 @@
 // CHIPS Income Tracker v2 - Main App
 // ===================================
 
+// ===== HELPER FUNCTIONS =====
+
+// Format number with commas (e.g., 10000 -> "10,000")
+function formatWithCommas(num) {
+    if (num === null || num === undefined || num === '') return '0';
+    const n = parseFloat(String(num).replace(/,/g, '')) || 0;
+    return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+// Parse formatted number (e.g., "10,000" -> 10000)
+function parseFormattedNumber(str) {
+    if (!str) return 0;
+    return parseFloat(String(str).replace(/,/g, '')) || 0;
+}
+
+// Setup comma formatting on input
+function setupCommaInput(input) {
+    if (!input) return;
+    
+    input.addEventListener('input', function(e) {
+        let value = this.value.replace(/[^0-9.]/g, '');
+        if (value) {
+            const parts = value.split('.');
+            parts[0] = parseInt(parts[0] || 0).toLocaleString('en-US');
+            this.value = parts.length > 1 ? parts[0] + '.' + parts[1].slice(0, 2) : parts[0];
+        }
+    });
+    
+    input.addEventListener('blur', function() {
+        if (this.value) {
+            this.value = formatWithCommas(this.value);
+        }
+    });
+}
+
 class ChipsApp {
     constructor() {
         // Data stores
@@ -18,7 +53,6 @@ class ChipsApp {
         
         // Temporary data for forms
         this.tempChipsIn = [];
-        this.tempChipsOut = [];
         this.tempOtherExpenses = [];
         
         // Chart instance
@@ -34,6 +68,7 @@ class ChipsApp {
     async init() {
         await this.showSplash();
         this.setupEventListeners();
+        this.setupAmountInputs();
         this.loadFromCache();
         await this.syncData();
         this.setupAutoSync();
@@ -47,6 +82,13 @@ class ChipsApp {
                 document.getElementById('app').classList.remove('hidden');
                 resolve();
             }, 2500);
+        });
+    }
+    
+    setupAmountInputs() {
+        // Setup comma formatting on all amount inputs
+        document.querySelectorAll('.amount-input').forEach(input => {
+            setupCommaInput(input);
         });
     }
     
@@ -92,6 +134,9 @@ class ChipsApp {
         
         // Weekly GGR listener
         document.getElementById('weeklyGGR')?.addEventListener('input', () => this.calculateWeeklyFields());
+        
+        // Ending Chips listener for NET CHIPS calculation
+        document.getElementById('endingChips')?.addEventListener('input', () => this.calculateCFRFields());
     }
     
     handleNavigation(item) {
@@ -187,27 +232,27 @@ class ChipsApp {
     loadDemoData() {
         this.data = {
             cfr: [
-                { rowIndex: 2, date: '2025-01-01', shiftTime: '12:00PM to 8:00PM', cfr: 25000, loaderSalary: 560, chipsIn: 100000, chipsInList: '[{"amount":100000,"remarks":"Starting"}]', chipsOut: 25000, chipsOutList: '[{"amount":25000,"remarks":"Cashout"}]', netChips: 75000 },
-                { rowIndex: 3, date: '2025-01-02', shiftTime: '8:00PM to 4:00AM', cfr: 30000, loaderSalary: 560, chipsIn: 75000, chipsInList: '[{"amount":75000,"remarks":"From prev"}]', chipsOut: 30000, chipsOutList: '[{"amount":30000,"remarks":"Cashout"}]', netChips: 45000 }
+                { rowIndex: 2, date: '2025-01-01', shiftTime: '12:00PM to 8:00PM', cfr: 25000, loaderSalary: 0, chipsIn: 100000, chipsInList: '[{"amount":100000,"remarks":"Starting Chips"}]', endingChips: 75000, netChips: 75000 },
+                { rowIndex: 3, date: '2025-01-02', shiftTime: '8:00PM to 4:00AM', cfr: 30000, loaderSalary: 0, chipsIn: 75000, chipsInList: '[{"amount":75000,"remarks":"Starting Chips"}]', endingChips: 45000, netChips: 45000 }
             ],
             expenses: [
                 { rowIndex: 2, date: '2025-01-01', total: 5000, expensesList: '[{"amount":3000,"remarks":"Groceries"},{"amount":2000,"remarks":"Gas"}]' },
                 { rowIndex: 3, date: '2025-01-02', total: 2500, expensesList: '[{"amount":2500,"remarks":"Load"}]' }
             ],
             weekly: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', ggr: 500000, loaderSalary: 3920, otherExpenses: 7500, netProfit: 488580, roi: 0.977, status: 'Profit', team50: 244290, siteFund35: 171003, retained20: 97716, savings15: 73287 }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', ggr: 500000, loaderSalary: 0, otherExpenses: 7500, netProfit: 492500, roi: 0.985, status: 'Profit', team50: 197000, siteFund35: 137900, retained20: 98500, savings15: 59100 }
             ],
             team: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 488580, allocated: 244290, spent: 50000, spentList: '[{"amount":50000,"remarks":"Withdrawal"}]', remaining: 194290 }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 492500, allocated: 197000, spent: 50000, spentList: '[{"amount":50000,"remarks":"Withdrawal"}]', remaining: 147000 }
             ],
             siteFund: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 488580, allocated: 171003, spent: 10000, spentList: '[{"amount":10000,"remarks":"Office"}]', remaining: 161003 }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 492500, allocated: 137900, spent: 10000, spentList: '[{"amount":10000,"remarks":"Office"}]', remaining: 127900 }
             ],
             retained: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 488580, allocated: 97716, spent: 15000, spentList: '[{"amount":15000,"remarks":"Bills"}]', remaining: 82716 }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 492500, allocated: 98500, spent: 15000, spentList: '[{"amount":15000,"remarks":"Bills"}]', remaining: 83500 }
             ],
             savings: [
-                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 488580, allocated: 73287, spent: 0, spentList: '[]', remaining: 73287 }
+                { rowIndex: 2, start: '2025-01-01', end: '2025-01-07', netProfit: 492500, allocated: 59100, spent: 0, spentList: '[]', remaining: 59100 }
             ],
             lastNetChips: 45000
         };
@@ -240,7 +285,7 @@ class ChipsApp {
         
         document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
         document.getElementById('totalGGR').textContent = formatCurrency(totalGGR);
-        document.getElementById('totalChips').textContent = formatNumber(totalChips);
+        document.getElementById('totalChips').textContent = formatWithCommas(totalChips);
         document.getElementById('avgROI').textContent = avgROI.toFixed(2) + '%';
         
         const teamTotal = this.data.team?.reduce((sum, f) => sum + (f.remaining || 0), 0) || 0;
@@ -317,7 +362,7 @@ class ChipsApp {
         this.renderCFRTable();
         this.renderExpensesTable();
         
-        document.getElementById('lastNetChips').textContent = formatNumber(this.data.lastNetChips);
+        document.getElementById('lastNetChips').textContent = formatWithCommas(this.data.lastNetChips);
         
         const today = new Date().toISOString().split('T')[0];
         const todayCFR = this.data.cfr?.filter(c => c.date === today).reduce((sum, c) => sum + (c.cfr || 0), 0) || 0;
@@ -342,11 +387,11 @@ class ChipsApp {
             <tr>
                 <td>${formatDate(item.date)}</td>
                 <td>${item.shiftTime}</td>
-                <td class="positive">${formatCurrency(item.cfr)}</td>
-                <td>${formatCurrency(item.loaderSalary)}</td>
-                <td>${formatNumber(item.chipsIn)}</td>
-                <td>${formatNumber(item.chipsOut)}</td>
-                <td class="${getValueClass(item.netChips)}">${formatNumber(item.netChips)}</td>
+                <td class="positive">${formatWithCommas(item.cfr)}</td>
+                <td>${formatWithCommas(item.loaderSalary)}</td>
+                <td>${formatWithCommas(item.chipsIn)}</td>
+                <td>${formatWithCommas(item.endingChips || item.chipsOut || 0)}</td>
+                <td class="${getValueClass(item.netChips)}">${formatWithCommas(item.netChips)}</td>
                 <td>
                     <button class="action-btn edit" onclick="app.editCFR(${item.rowIndex})">Edit</button>
                     <button class="action-btn delete" onclick="app.deleteCFR(${item.rowIndex})">Del</button>
@@ -392,44 +437,50 @@ class ChipsApp {
     
     openCFRModal(editData = null) {
         this.tempChipsIn = [];
-        this.tempChipsOut = [];
         
         document.getElementById('cfrForm').reset();
         document.getElementById('cfrRowIndex').value = '';
         document.getElementById('chipsInList').innerHTML = '';
-        document.getElementById('chipsOutList').innerHTML = '';
+        
+        // Setup comma formatting
+        this.setupAmountInputs();
         
         if (editData) {
             document.getElementById('cfrModalTitle').textContent = 'Edit CFR Entry';
             document.getElementById('cfrRowIndex').value = editData.rowIndex;
             document.getElementById('cfrDate').value = formatDateForInput(editData.date);
             document.getElementById('cfrShift').value = editData.shiftTime;
-            document.getElementById('cfrAmount').value = editData.cfr;
-            document.getElementById('cfrLoaderSalary').value = editData.loaderSalary;
+            document.getElementById('cfrAmount').value = formatWithCommas(editData.cfr);
+            document.getElementById('cfrLoaderSalary').value = formatWithCommas(editData.loaderSalary);
+            document.getElementById('endingChips').value = formatWithCommas(editData.endingChips || editData.netChips || 0);
             
             try {
                 this.tempChipsIn = JSON.parse(editData.chipsInList || '[]');
-                this.tempChipsOut = JSON.parse(editData.chipsOutList || '[]');
             } catch(e) {}
             
             this.renderChipsInList();
-            this.renderChipsOutList();
+            document.getElementById('autoFillNotice').style.display = 'none';
         } else {
             document.getElementById('cfrModalTitle').textContent = 'Add CFR Entry';
             document.getElementById('cfrDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('cfrLoaderSalary').value = '560';
+            document.getElementById('cfrLoaderSalary').value = '0';
+            document.getElementById('endingChips').value = '';
             
             const lastNetChips = this.data.lastNetChips || 0;
-            document.getElementById('autoFillValue').textContent = formatNumber(lastNetChips);
+            document.getElementById('autoFillValue').textContent = formatWithCommas(lastNetChips);
+            document.getElementById('autoFillNotice').style.display = lastNetChips > 0 ? 'block' : 'none';
             
             if (lastNetChips > 0) {
-                this.tempChipsIn = [{ amount: lastNetChips, remarks: 'From previous shift' }];
+                this.tempChipsIn = [{ amount: lastNetChips, remarks: 'Starting Chips' }];
                 this.renderChipsInList();
             }
         }
         
         this.calculateCFRFields();
         document.getElementById('cfrModal').classList.add('active');
+        
+        // Re-setup comma inputs after modal is shown
+        setTimeout(() => this.setupAmountInputs(), 100);
     }
     
     closeCFRModal() {
@@ -437,7 +488,7 @@ class ChipsApp {
     }
     
     addChipsInItem() {
-        const amount = parseFloat(document.getElementById('newChipsInAmount').value) || 0;
+        const amount = parseFormattedNumber(document.getElementById('newChipsInAmount').value);
         const remarks = document.getElementById('newChipsInRemarks').value.trim();
         
         if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
@@ -459,59 +510,31 @@ class ChipsApp {
     renderChipsInList() {
         document.getElementById('chipsInList').innerHTML = this.tempChipsIn.map((item, i) => `
             <div class="multi-input-item">
-                <span class="item-amount">${formatNumber(item.amount)}</span>
+                <span class="item-amount">${formatWithCommas(item.amount)}</span>
                 <span class="item-remarks">${item.remarks}</span>
                 <button type="button" class="item-remove" onclick="app.removeChipsInItem(${i})">×</button>
             </div>
         `).join('');
     }
     
-    addChipsOutItem() {
-        const amount = parseFloat(document.getElementById('newChipsOutAmount').value) || 0;
-        const remarks = document.getElementById('newChipsOutRemarks').value.trim();
-        
-        if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
-        
-        this.tempChipsOut.push({ amount, remarks: remarks || 'No remarks' });
-        this.renderChipsOutList();
-        this.calculateCFRFields();
-        
-        document.getElementById('newChipsOutAmount').value = '';
-        document.getElementById('newChipsOutRemarks').value = '';
-    }
-    
-    removeChipsOutItem(index) {
-        this.tempChipsOut.splice(index, 1);
-        this.renderChipsOutList();
-        this.calculateCFRFields();
-    }
-    
-    renderChipsOutList() {
-        document.getElementById('chipsOutList').innerHTML = this.tempChipsOut.map((item, i) => `
-            <div class="multi-input-item">
-                <span class="item-amount">${formatNumber(item.amount)}</span>
-                <span class="item-remarks">${item.remarks}</span>
-                <button type="button" class="item-remove" onclick="app.removeChipsOutItem(${i})">×</button>
-            </div>
-        `).join('');
-    }
-    
     calculateCFRFields() {
         const totalChipsIn = this.tempChipsIn.reduce((sum, item) => sum + item.amount, 0);
-        const totalChipsOut = this.tempChipsOut.reduce((sum, item) => sum + item.amount, 0);
-        const netChips = totalChipsIn - totalChipsOut;
+        const endingChips = parseFormattedNumber(document.getElementById('endingChips')?.value);
         
-        document.getElementById('totalChipsIn').textContent = formatNumber(totalChipsIn);
-        document.getElementById('totalChipsOut').textContent = formatNumber(totalChipsOut);
-        document.getElementById('calculatedNetChips').textContent = formatNumber(netChips);
+        // NET CHIPS = Ending Chips directly
+        const netChips = endingChips;
+        
+        document.getElementById('totalChipsIn').textContent = formatWithCommas(totalChipsIn);
+        document.getElementById('calculatedNetChips').textContent = formatWithCommas(netChips);
     }
     
     async saveCFREntry() {
         const rowIndex = document.getElementById('cfrRowIndex').value;
         const date = document.getElementById('cfrDate').value;
         const shiftTime = document.getElementById('cfrShift').value;
-        const cfr = parseFloat(document.getElementById('cfrAmount').value) || 0;
-        const loaderSalary = parseFloat(document.getElementById('cfrLoaderSalary').value) || 0;
+        const cfr = parseFormattedNumber(document.getElementById('cfrAmount').value);
+        const loaderSalary = parseFormattedNumber(document.getElementById('cfrLoaderSalary').value);
+        const endingChips = parseFormattedNumber(document.getElementById('endingChips').value);
         
         if (!date || cfr <= 0) {
             this.showToast('Fill required fields', 'warning');
@@ -524,7 +547,8 @@ class ChipsApp {
             cfr,
             loaderSalary,
             chipsInList: this.tempChipsIn,
-            chipsOutList: this.tempChipsOut
+            endingChips,
+            netChips: endingChips // NET CHIPS = Ending Chips
         };
         
         if (rowIndex) data.rowIndex = parseInt(rowIndex);
@@ -586,6 +610,9 @@ class ChipsApp {
         
         this.calculateOtherExpenses();
         document.getElementById('otherExpensesModal').classList.add('active');
+        
+        // Setup comma inputs
+        setTimeout(() => this.setupAmountInputs(), 100);
     }
     
     closeOtherExpensesModal() {
@@ -593,7 +620,7 @@ class ChipsApp {
     }
     
     addExpenseItem() {
-        const amount = parseFloat(document.getElementById('newExpenseAmount').value) || 0;
+        const amount = parseFormattedNumber(document.getElementById('newExpenseAmount').value);
         const remarks = document.getElementById('newExpenseRemarks').value.trim();
         
         if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
