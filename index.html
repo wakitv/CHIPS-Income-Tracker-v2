@@ -258,10 +258,10 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Shift</th>
-                                    <th>CFR</th>
+                                    <th>CFR/Chips Out</th>
                                     <th>Loader Salary</th>
                                     <th>Chips In</th>
-                                    <th>Chips Out</th>
+                                    <th>Ending Chips</th>
                                     <th>Net Chips</th>
                                     <th>Actions</th>
                                 </tr>
@@ -553,12 +553,12 @@
                         <h4 class="form-section-title">💵 Cash For Remittance</h4>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>CFR Amount</label>
-                                <input type="number" class="form-input" id="cfrAmount" step="0.01" placeholder="0" required>
+                                <label>CFR / CHIPS OUT</label>
+                                <input type="text" class="form-input amount-input" id="cfrAmount" placeholder="0" required>
                             </div>
                             <div class="form-group">
                                 <label>Loader Salary</label>
-                                <input type="number" class="form-input" id="cfrLoaderSalary" step="0.01" placeholder="560" value="560">
+                                <input type="text" class="form-input amount-input" id="cfrLoaderSalary" placeholder="0" value="0">
                             </div>
                         </div>
                     </div>
@@ -572,8 +572,8 @@
                             <!-- Dynamic items -->
                         </div>
                         <div class="multi-input-add">
-                            <input type="number" class="form-input" id="newChipsInAmount" placeholder="Amount" step="0.01">
-                            <input type="text" class="form-input" id="newChipsInRemarks" placeholder="Remarks (e.g. Starting chips)">
+                            <input type="text" class="form-input amount-input" id="newChipsInAmount" placeholder="Amount">
+                            <input type="text" class="form-input" id="newChipsInRemarks" placeholder="Remarks (e.g. Added chips)">
                             <button type="button" class="btn btn-small btn-add" onclick="app.addChipsInItem()">+ Add</button>
                         </div>
                         <div class="calculated-field">
@@ -583,18 +583,11 @@
                     </div>
 
                     <div class="form-section">
-                        <h4 class="form-section-title">🎰 Chips Out (Multiple)</h4>
-                        <div class="multi-input-list" id="chipsOutList">
-                            <!-- Dynamic items -->
-                        </div>
-                        <div class="multi-input-add">
-                            <input type="number" class="form-input" id="newChipsOutAmount" placeholder="Amount" step="0.01">
-                            <input type="text" class="form-input" id="newChipsOutRemarks" placeholder="Remarks (e.g. Cash out)">
-                            <button type="button" class="btn btn-small btn-add" onclick="app.addChipsOutItem()">+ Add</button>
-                        </div>
-                        <div class="calculated-field">
-                            <span>Total Chips Out:</span>
-                            <span class="calculated-value" id="totalChipsOut">0</span>
+                        <h4 class="form-section-title">🎰 Ending Chips</h4>
+                        <div class="form-group">
+                            <label>Ending Chips Balance</label>
+                            <input type="text" class="form-input amount-input" id="endingChips" placeholder="0" required>
+                            <small class="form-hint">Enter the chips balance at end of shift</small>
                         </div>
                     </div>
 
@@ -603,7 +596,7 @@
                             <span>NET CHIPS:</span>
                             <span class="calculated-value" id="calculatedNetChips">0</span>
                         </div>
-                        <small class="formula">Chips In - Chips Out</small>
+                        <small class="formula">= Ending Chips</small>
                     </div>
                 </form>
             </div>
@@ -636,7 +629,7 @@
                             <!-- Dynamic items -->
                         </div>
                         <div class="multi-input-add">
-                            <input type="number" class="form-input" id="newExpenseAmount" placeholder="Amount" step="0.01">
+                            <input type="text" class="form-input amount-input" id="newExpenseAmount" placeholder="Amount">
                             <input type="text" class="form-input" id="newExpenseRemarks" placeholder="Remarks (e.g. Groceries)">
                             <button type="button" class="btn btn-small btn-add" onclick="app.addExpenseItem()">+ Add</button>
                         </div>
