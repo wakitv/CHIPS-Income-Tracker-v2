@@ -228,10 +228,6 @@ class ChipsApp {
         // Date Filter buttons
         document.getElementById('applyFilterBtn')?.addEventListener('click', () => this.applyDateFilter());
         document.getElementById('resetFilterBtn')?.addEventListener('click', () => this.resetDateFilter());
-        
-        // Also allow pressing Enter on date inputs to apply filter
-        document.getElementById('filterStartDate')?.addEventListener('change', () => this.applyDateFilter());
-        document.getElementById('filterEndDate')?.addEventListener('change', () => this.applyDateFilter());
         document.getElementById('addWeeklyBtn')?.addEventListener('click', () => this.openWeeklyModal());
         
         // Weekly GGR listener
@@ -494,13 +490,7 @@ class ChipsApp {
             this.filterEndDate = getDateStr(lastDay);
         }
         
-        // Set date inputs
-        const startInput = document.getElementById('filterStartDate');
-        const endInput = document.getElementById('filterEndDate');
-        if (startInput) startInput.value = this.filterStartDate;
-        if (endInput) endInput.value = this.filterEndDate;
-        
-        // Setup Flatpickr for filter inputs
+        // Setup Flatpickr for filter inputs (with default dates)
         this.setupFilterDatePickers();
         
         // Filter data by date range
@@ -559,12 +549,14 @@ class ChipsApp {
         const startInput = document.getElementById('filterStartDate');
         const endInput = document.getElementById('filterEndDate');
         
+        const self = this;
+        
         const config = {
             dateFormat: "Y-m-d",
             altInput: true,
-            altFormat: "M d, Y",
+            altFormat: "M d",
             theme: "dark",
-            disableMobile: false,
+            disableMobile: true,
             animate: true,
             position: "auto center",
             monthSelectorType: "static",
@@ -575,20 +567,24 @@ class ChipsApp {
             }
         };
         
-        if (startInput && !startInput._flatpickr) {
+        if (startInput) {
+            if (startInput._flatpickr) startInput._flatpickr.destroy();
             flatpickr(startInput, {
                 ...config,
+                defaultDate: this.filterStartDate,
                 onChange: (selectedDates, dateStr) => {
-                    this.filterStartDate = dateStr;
+                    self.filterStartDate = dateStr;
                 }
             });
         }
         
-        if (endInput && !endInput._flatpickr) {
+        if (endInput) {
+            if (endInput._flatpickr) endInput._flatpickr.destroy();
             flatpickr(endInput, {
                 ...config,
+                defaultDate: this.filterEndDate,
                 onChange: (selectedDates, dateStr) => {
-                    this.filterEndDate = dateStr;
+                    self.filterEndDate = dateStr;
                 }
             });
         }
