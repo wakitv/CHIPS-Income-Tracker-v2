@@ -553,7 +553,7 @@ class ChipsApp {
         const config = {
             dateFormat: "Y-m-d",
             altInput: true,
-            altFormat: "M d",
+            altFormat: "M d, Y",
             theme: "dark",
             disableMobile: true,
             animate: true,
@@ -563,40 +563,65 @@ class ChipsApp {
             nextArrow: "▶",
             onReady: function(selectedDates, dateStr, instance) {
                 instance.calendarContainer.classList.add('chips-calendar');
+                // Style the alt input to match
+                if (instance.altInput) {
+                    instance.altInput.classList.add('filter-date-input');
+                }
             }
         };
         
         if (startInput) {
             if (startInput._flatpickr) startInput._flatpickr.destroy();
-            flatpickr(startInput, {
+            const fp1 = flatpickr(startInput, {
                 ...config,
                 defaultDate: this.filterStartDate,
                 onChange: (selectedDates, dateStr) => {
                     self.filterStartDate = dateStr;
                 }
             });
+            // Force set the date
+            if (this.filterStartDate) {
+                fp1.setDate(this.filterStartDate, true);
+            }
         }
         
         if (endInput) {
             if (endInput._flatpickr) endInput._flatpickr.destroy();
-            flatpickr(endInput, {
+            const fp2 = flatpickr(endInput, {
                 ...config,
                 defaultDate: this.filterEndDate,
                 onChange: (selectedDates, dateStr) => {
                     self.filterEndDate = dateStr;
                 }
             });
+            // Force set the date
+            if (this.filterEndDate) {
+                fp2.setDate(this.filterEndDate, true);
+            }
         }
     }
     
     filterByDateRange(data, startDate, endDate) {
-        if (!data || data.length === 0) return [];
-        if (!startDate || !endDate) return data;
+        if (!data || data.length === 0) {
+            console.log('filterByDateRange: No data to filter');
+            return [];
+        }
+        if (!startDate || !endDate) {
+            console.log('filterByDateRange: No date range set, returning all data');
+            return data;
+        }
         
-        return data.filter(item => {
+        console.log('filterByDateRange:', startDate, 'to', endDate, '| Total items:', data.length);
+        
+        const filtered = data.filter(item => {
             const itemDate = getDateStr(item.date);
-            return itemDate >= startDate && itemDate <= endDate;
+            const inRange = itemDate >= startDate && itemDate <= endDate;
+            console.log('  Item date:', item.date, '-> normalized:', itemDate, '| In range:', inRange);
+            return inRange;
         });
+        
+        console.log('filterByDateRange: Filtered items:', filtered.length);
+        return filtered;
     }
     
     applyDateFilter() {
