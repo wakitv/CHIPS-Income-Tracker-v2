@@ -232,19 +232,39 @@
                     </div>
                 </div>
 
+                <!-- Date Filter Section -->
+                <div class="date-filter-section">
+                    <div class="date-filter-header">
+                        <span class="filter-icon">📅</span>
+                        <span class="filter-title">Filter by Date Range</span>
+                    </div>
+                    <div class="date-filter-inputs">
+                        <div class="date-input-group">
+                            <label>From</label>
+                            <input type="date" class="form-input date-filter-input" id="filterStartDate">
+                        </div>
+                        <div class="date-input-group">
+                            <label>To</label>
+                            <input type="date" class="form-input date-filter-input" id="filterEndDate">
+                        </div>
+                        <button class="btn btn-filter" id="applyFilterBtn">Apply</button>
+                        <button class="btn btn-reset" id="resetFilterBtn">Reset</button>
+                    </div>
+                </div>
+
                 <!-- Summary Stats -->
                 <div class="mini-stats">
                     <div class="mini-stat">
                         <span class="mini-label">Last Net Chips</span>
                         <span class="mini-value" id="lastNetChips">0</span>
                     </div>
-                    <div class="mini-stat">
-                        <span class="mini-label">Today's CFR</span>
-                        <span class="mini-value" id="todayCFR">₱0</span>
+                    <div class="mini-stat highlight-stat">
+                        <span class="mini-label">Total CFR</span>
+                        <span class="mini-value positive" id="totalCFR">₱0</span>
                     </div>
-                    <div class="mini-stat">
-                        <span class="mini-label">Today's Expenses</span>
-                        <span class="mini-value negative" id="todayExpenses">₱0</span>
+                    <div class="mini-stat highlight-stat">
+                        <span class="mini-label">Total Expenses</span>
+                        <span class="mini-value negative" id="totalExpenses">₱0</span>
                     </div>
                 </div>
 
