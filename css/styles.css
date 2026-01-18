@@ -1574,109 +1574,100 @@ body::before {
 ::-webkit-scrollbar-thumb { background: var(--border-color-strong); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
-/* ===== COMPACT DATE FILTER ===== */
-.compact-filter {
-    background: var(--bg-card);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    padding: 12px 16px;
-    margin-bottom: 16px;
-}
-
-.filter-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.filter-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    white-space: nowrap;
-}
-
-.filter-date-input {
-    width: 130px !important;
-    padding: 8px 12px !important;
-    font-size: 12px !important;
-    background: var(--bg-card-hover) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 8px !important;
-    color: var(--text-primary) !important;
-    cursor: pointer !important;
-    text-align: center !important;
-}
-
-.filter-date-input:focus {
-    outline: none !important;
-    border-color: var(--gold) !important;
-}
-
-.filter-date-input::placeholder {
-    color: var(--text-muted);
-}
-
-/* Flatpickr alt input styling for filter */
-.compact-filter .flatpickr-input {
-    display: none;
-}
-
-.compact-filter input.flatpickr-input + input {
-    width: 130px !important;
-    padding: 8px 12px !important;
-    font-size: 12px !important;
-    background: var(--bg-card-hover) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 8px !important;
-    color: var(--text-primary) !important;
-    cursor: pointer !important;
-    text-align: center !important;
-}
-
-.compact-filter input.flatpickr-input + input:focus {
-    outline: none !important;
-    border-color: var(--gold) !important;
-}
-
-.filter-separator {
-    color: var(--text-muted);
-    font-size: 14px;
-}
-
-.filter-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
+/* ===== DATE FILTER BAR (Below Stats) ===== */
+.date-filter-bar {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--bg-card);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 16px;
 }
 
-.filter-btn.apply {
+.date-filter-bar .filter-icon {
+    font-size: 14px;
+}
+
+.date-filter-bar .filter-input {
+    width: 95px;
+    padding: 6px 10px;
+    font-size: 11px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: center;
+}
+
+.date-filter-bar .filter-input:focus {
+    outline: none;
+    border-color: var(--gold);
+}
+
+.date-filter-bar .filter-dash {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.filter-btn-sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.filter-btn-sm.apply {
     background: linear-gradient(135deg, var(--gold), var(--gold-dark));
     color: var(--bg-primary);
 }
 
-.filter-btn.apply:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+.filter-btn-sm.apply:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
 }
 
-.filter-btn.reset {
+.filter-btn-sm.reset {
     background: var(--bg-card-hover);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
 }
 
-.filter-btn.reset:hover {
+.filter-btn-sm.reset:hover {
     border-color: var(--gold);
     color: var(--gold);
+}
+
+/* Flatpickr alt input styling for filter bar */
+.date-filter-bar input.flatpickr-input {
+    display: none !important;
+}
+
+.date-filter-bar input.flatpickr-input + input,
+.date-filter-bar input.form-control.input {
+    width: 95px !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    background: var(--bg-card-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    color: var(--text-primary) !important;
+    cursor: pointer !important;
+    text-align: center !important;
+}
+
+.date-filter-bar input.flatpickr-input + input:focus {
+    outline: none !important;
+    border-color: var(--gold) !important;
 }
 
 .highlight-stat {
@@ -1686,29 +1677,24 @@ body::before {
 
 /* Mobile responsive */
 @media (max-width: 480px) {
-    .compact-filter {
-        padding: 10px 12px;
+    .date-filter-bar {
+        padding: 8px 12px;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
-    .filter-row {
-        gap: 8px;
+    .date-filter-bar .filter-input,
+    .date-filter-bar input.flatpickr-input + input {
+        width: 85px !important;
+        padding: 5px 8px !important;
+        font-size: 10px !important;
     }
     
-    .filter-label {
-        font-size: 12px;
-    }
-    
-    .filter-date-input,
-    .compact-filter input.flatpickr-input + input {
-        width: 100px !important;
-        padding: 6px 8px !important;
-        font-size: 11px !important;
-    }
-    
-    .filter-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 12px;
+    .filter-btn-sm {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
     }
 }
 
