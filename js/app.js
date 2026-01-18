@@ -481,13 +481,12 @@ class ChipsApp {
     renderIncomeTracker() {
         // Initialize filter dates if not set
         if (!this.filterStartDate || !this.filterEndDate) {
-            // Default to current month
+            // Default to last 1 week
             const now = new Date();
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
             
-            this.filterStartDate = getDateStr(firstDay);
-            this.filterEndDate = getDateStr(lastDay);
+            this.filterStartDate = getDateStr(oneWeekAgo);
+            this.filterEndDate = getDateStr(now);
         }
         
         // Setup Flatpickr for filter inputs (with default dates)
@@ -619,16 +618,15 @@ class ChipsApp {
     }
     
     resetDateFilter() {
-        // Reset to current month
+        // Reset to last 1 week
         const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
         
-        this.filterStartDate = getDateStr(firstDay);
-        this.filterEndDate = getDateStr(lastDay);
+        this.filterStartDate = getDateStr(oneWeekAgo);
+        this.filterEndDate = getDateStr(now);
         
         this.renderIncomeTracker();
-        this.showToast('Filter reset to current month', 'info');
+        this.showToast('Filter reset to last 7 days', 'info');
     }
     
     renderCFRTable() {
