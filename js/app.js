@@ -224,6 +224,14 @@ class ChipsApp {
         // Add buttons
         document.getElementById('addCFRBtn')?.addEventListener('click', () => this.openCFRModal());
         document.getElementById('addExpenseBtn')?.addEventListener('click', () => this.openOtherExpensesModal());
+        
+        // Date Filter buttons
+        document.getElementById('applyFilterBtn')?.addEventListener('click', () => this.applyDateFilter());
+        document.getElementById('resetFilterBtn')?.addEventListener('click', () => this.resetDateFilter());
+        
+        // Also allow pressing Enter on date inputs to apply filter
+        document.getElementById('filterStartDate')?.addEventListener('change', () => this.applyDateFilter());
+        document.getElementById('filterEndDate')?.addEventListener('change', () => this.applyDateFilter());
         document.getElementById('addWeeklyBtn')?.addEventListener('click', () => this.openWeeklyModal());
         
         // Weekly GGR listener
@@ -475,68 +483,156 @@ class ChipsApp {
     // ===== INCOME TRACKER =====
     
     renderIncomeTracker() {
+        // Initialize filter dates if not set
+        if (!this.filterStartDate || !this.filterEndDate) {
+            // Default to current month
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            this.filterStartDate = getDateStr(firstDay);
+            this.filterEndDate = getDateStr(lastDay);
+        }
+        
+        // Set date inputs
+        const startInput = document.getElementById('filterStartDate');
+        const endInput = document.getElementById('filterEndDate');
+        if (startInput) startInput.value = this.filterStartDate;
+        if (endInput) endInput.value = this.filterEndDate;
+        
+        // Setup Flatpickr for filter inputs
+        this.setupFilterDatePickers();
+        
+        // Filter data by date range
+        this.filteredCFR = this.filterByDateRange(this.data.cfr || [], this.filterStartDate, this.filterEndDate);
+        this.filteredExpenses = this.filterByDateRange(this.data.expenses || [], this.filterStartDate, this.filterEndDate);
+        
+        // Render tables with filtered data
         this.renderCFRTable();
         this.renderExpensesTable();
         
+        // Update Last Net Chips
         const lastNetChipsEl = document.getElementById('lastNetChips');
-        const todayCFREl = document.getElementById('todayCFR');
-        const todayExpensesEl = document.getElementById('todayExpenses');
-        
         if (lastNetChipsEl) {
             lastNetChipsEl.textContent = formatWithCommas(this.data.lastNetChips);
         }
         
-        // Get today's date string
-        const todayStr = getTodayStr();
+        // Calculate Total CFR from filtered data
+        let totalCFR = 0;
+        let totalLoaderSalary = 0;
         
-        // Calculate Today's CFR and Loader Salary
-        let todayCFR = 0;
-        let todayLoaderSalary = 0;
+        this.filteredCFR.forEach(c => {
+            totalCFR += parseFloat(c.cfr) || 0;
+            totalLoaderSalary += parseFloat(c.loaderSalary) || 0;
+        });
         
-        console.log('=== CHECKING CFR ENTRIES ===');
-        console.log('Today:', todayStr);
+        // Calculate Total Expenses from filtered data
+        let totalOtherExp = 0;
+        this.filteredExpenses.forEach(e => {
+            totalOtherExp += parseFloat(e.total) || 0;
+        });
         
-        if (this.data.cfr && this.data.cfr.length > 0) {
-            this.data.cfr.forEach((c, index) => {
-                const entryDateStr = getDateStr(c.date);
-                const isMatch = entryDateStr === todayStr;
-                
-                console.log(`Entry ${index + 1}: raw="${c.date}" -> normalized="${entryDateStr}" | MATCH: ${isMatch}`);
-                
-                if (isMatch) {
-                    todayCFR += parseFloat(c.cfr) || 0;
-                    todayLoaderSalary += parseFloat(c.loaderSalary) || 0;
-                    console.log(`  -> Adding CFR: ${c.cfr}, Loader: ${c.loaderSalary}`);
+        // Total Expenses = Loader Salary + Other Expenses
+        const totalExp = totalLoaderSalary + totalOtherExp;
+        
+        // Update display
+        const totalCFREl = document.getElementById('totalCFR');
+        const totalExpensesEl = document.getElementById('totalExpenses');
+        
+        if (totalCFREl) {
+            totalCFREl.textContent = formatCurrency(totalCFR);
+        }
+        if (totalExpensesEl) {
+            totalExpensesEl.textContent = formatCurrency(totalExp);
+        }
+        
+        console.log('=== FILTER SUMMARY ===');
+        console.log('Date Range:', this.filterStartDate, 'to', this.filterEndDate);
+        console.log('Filtered CFR Entries:', this.filteredCFR.length);
+        console.log('Total CFR:', totalCFR);
+        console.log('Total Loader Salary:', totalLoaderSalary);
+        console.log('Total Other Expenses:', totalOtherExp);
+        console.log('TOTAL Expenses:', totalExp);
+    }
+    
+    setupFilterDatePickers() {
+        const startInput = document.getElementById('filterStartDate');
+        const endInput = document.getElementById('filterEndDate');
+        
+        const config = {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "M d, Y",
+            theme: "dark",
+            disableMobile: false,
+            animate: true,
+            position: "auto center",
+            monthSelectorType: "static",
+            prevArrow: "◀",
+            nextArrow: "▶",
+            onReady: function(selectedDates, dateStr, instance) {
+                instance.calendarContainer.classList.add('chips-calendar');
+            }
+        };
+        
+        if (startInput && !startInput._flatpickr) {
+            flatpickr(startInput, {
+                ...config,
+                onChange: (selectedDates, dateStr) => {
+                    this.filterStartDate = dateStr;
                 }
             });
         }
         
-        // Calculate Today's Other Expenses
-        let todayOtherExp = 0;
-        if (this.data.expenses && this.data.expenses.length > 0) {
-            this.data.expenses.forEach(e => {
-                const entryDateStr = getDateStr(e.date);
-                if (entryDateStr === todayStr) {
-                    todayOtherExp += parseFloat(e.total) || 0;
+        if (endInput && !endInput._flatpickr) {
+            flatpickr(endInput, {
+                ...config,
+                onChange: (selectedDates, dateStr) => {
+                    this.filterEndDate = dateStr;
                 }
             });
         }
+    }
+    
+    filterByDateRange(data, startDate, endDate) {
+        if (!data || data.length === 0) return [];
+        if (!startDate || !endDate) return data;
         
-        // Today's Expenses = Loader Salary + Other Expenses
-        const todayExp = todayLoaderSalary + todayOtherExp;
+        return data.filter(item => {
+            const itemDate = getDateStr(item.date);
+            return itemDate >= startDate && itemDate <= endDate;
+        });
+    }
+    
+    applyDateFilter() {
+        const startInput = document.getElementById('filterStartDate');
+        const endInput = document.getElementById('filterEndDate');
         
-        console.log('=== TODAY SUMMARY ===');
-        console.log('Today CFR Total:', todayCFR);
-        console.log('Today Loader Salary:', todayLoaderSalary);
-        console.log('Today Other Expenses:', todayOtherExp);
-        console.log('Today TOTAL Expenses:', todayExp);
-        
-        if (todayCFREl) {
-            todayCFREl.textContent = formatCurrency(todayCFR);
+        if (startInput && endInput) {
+            this.filterStartDate = startInput.value;
+            this.filterEndDate = endInput.value;
+            
+            if (this.filterStartDate > this.filterEndDate) {
+                this.showToast('Start date must be before end date', 'warning');
+                return;
+            }
+            
+            this.renderIncomeTracker();
+            this.showToast('Filter applied!', 'success');
         }
-        if (todayExpensesEl) {
-            todayExpensesEl.textContent = formatCurrency(todayExp);
-        }
+    }
+    
+    resetDateFilter() {
+        // Reset to current month
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        this.filterStartDate = getDateStr(firstDay);
+        this.filterEndDate = getDateStr(lastDay);
+        
+        this.renderIncomeTracker();
+        this.showToast('Filter reset to current month', 'info');
     }
     
     renderCFRTable() {
@@ -546,12 +642,13 @@ class ChipsApp {
             return;
         }
         
-        const cfr = this.data.cfr || [];
+        // Use filtered data
+        const cfr = this.filteredCFR || this.data.cfr || [];
         
         if (cfr.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <p>No CFR entries. Click "+ CFR Entry" to add.</p>
+                    <p>No CFR entries for selected date range.</p>
                 </div>
             `;
             return;
@@ -676,10 +773,11 @@ class ChipsApp {
             return;
         }
         
-        const expenses = this.data.expenses || [];
+        // Use filtered data
+        const expenses = this.filteredExpenses || this.data.expenses || [];
         
         if (expenses.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No expenses. Click "+ Other Expenses" to add.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No expenses for selected date range.</td></tr>';
             return;
         }
         
