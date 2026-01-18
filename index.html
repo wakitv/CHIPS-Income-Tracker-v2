@@ -232,18 +232,6 @@
                     </div>
                 </div>
 
-                <!-- Compact Date Filter -->
-                <div class="compact-filter">
-                    <div class="filter-row">
-                        <span class="filter-label">📅 Filter:</span>
-                        <input type="text" class="filter-date-input" id="filterStartDate" placeholder="Start Date" readonly>
-                        <span class="filter-separator">—</span>
-                        <input type="text" class="filter-date-input" id="filterEndDate" placeholder="End Date" readonly>
-                        <button class="filter-btn apply" id="applyFilterBtn">✓</button>
-                        <button class="filter-btn reset" id="resetFilterBtn">↺</button>
-                    </div>
-                </div>
-
                 <!-- Summary Stats -->
                 <div class="mini-stats">
                     <div class="mini-stat">
@@ -258,6 +246,16 @@
                         <span class="mini-label">Total Expenses</span>
                         <span class="mini-value negative" id="totalExpenses">₱0</span>
                     </div>
+                </div>
+
+                <!-- Compact Date Filter Below Stats -->
+                <div class="date-filter-bar">
+                    <span class="filter-icon">📅</span>
+                    <input type="text" class="filter-input" id="filterStartDate" placeholder="Start" readonly>
+                    <span class="filter-dash">–</span>
+                    <input type="text" class="filter-input" id="filterEndDate" placeholder="End" readonly>
+                    <button class="filter-btn-sm apply" id="applyFilterBtn" title="Apply Filter">✓</button>
+                    <button class="filter-btn-sm reset" id="resetFilterBtn" title="Reset to 7 Days">↺</button>
                 </div>
 
                 <!-- Tabs for CFR and Expenses -->
