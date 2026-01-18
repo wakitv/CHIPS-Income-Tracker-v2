@@ -1598,24 +1598,46 @@ body::before {
 }
 
 .filter-date-input {
-    width: 120px;
-    padding: 8px 12px;
-    font-size: 12px;
-    background: var(--bg-card-hover);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-primary);
-    cursor: pointer;
-    text-align: center;
+    width: 130px !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    background: var(--bg-card-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+    cursor: pointer !important;
+    text-align: center !important;
 }
 
 .filter-date-input:focus {
-    outline: none;
-    border-color: var(--gold);
+    outline: none !important;
+    border-color: var(--gold) !important;
 }
 
 .filter-date-input::placeholder {
     color: var(--text-muted);
+}
+
+/* Flatpickr alt input styling for filter */
+.compact-filter .flatpickr-input {
+    display: none;
+}
+
+.compact-filter input.flatpickr-input + input {
+    width: 130px !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    background: var(--bg-card-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+    cursor: pointer !important;
+    text-align: center !important;
+}
+
+.compact-filter input.flatpickr-input + input:focus {
+    outline: none !important;
+    border-color: var(--gold) !important;
 }
 
 .filter-separator {
@@ -1674,14 +1696,13 @@ body::before {
     
     .filter-label {
         font-size: 12px;
-        width: 100%;
-        margin-bottom: 4px;
     }
     
-    .filter-date-input {
-        width: 100px;
-        padding: 6px 8px;
-        font-size: 11px;
+    .filter-date-input,
+    .compact-filter input.flatpickr-input + input {
+        width: 100px !important;
+        padding: 6px 8px !important;
+        font-size: 11px !important;
     }
     
     .filter-btn {
