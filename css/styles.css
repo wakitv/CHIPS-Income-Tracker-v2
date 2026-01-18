@@ -1574,96 +1574,85 @@ body::before {
 ::-webkit-scrollbar-thumb { background: var(--border-color-strong); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
-/* ===== DATE FILTER SECTION ===== */
-.date-filter-section {
+/* ===== COMPACT DATE FILTER ===== */
+.compact-filter {
     background: var(--bg-card);
-    border-radius: 16px;
+    border-radius: 12px;
     border: 1px solid var(--border-color);
-    padding: 16px 20px;
-    margin-bottom: 20px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
 }
 
-.date-filter-header {
+.filter-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.filter-icon {
-    font-size: 18px;
-}
-
-.filter-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.date-filter-inputs {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
-.date-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.date-input-group label {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    font-weight: 500;
-}
-
-.date-filter-input {
-    width: 140px;
-    padding: 8px 12px;
+.filter-label {
     font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.filter-date-input {
+    width: 120px;
+    padding: 8px 12px;
+    font-size: 12px;
     background: var(--bg-card-hover);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-primary);
+    cursor: pointer;
+    text-align: center;
 }
 
-.date-filter-input:focus {
+.filter-date-input:focus {
     outline: none;
     border-color: var(--gold);
 }
 
-.btn-filter,
-.btn-reset {
-    padding: 8px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 18px;
+.filter-date-input::placeholder {
+    color: var(--text-muted);
 }
 
-.btn-filter {
+.filter-separator {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.filter-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.filter-btn.apply {
     background: linear-gradient(135deg, var(--gold), var(--gold-dark));
     color: var(--bg-primary);
-    border: none;
 }
 
-.btn-filter:hover {
-    transform: translateY(-2px);
+.filter-btn.apply:hover {
+    transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
-.btn-reset {
-    background: transparent;
+.filter-btn.reset {
+    background: var(--bg-card-hover);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
 }
 
-.btn-reset:hover {
+.filter-btn.reset:hover {
     border-color: var(--gold);
     color: var(--gold);
 }
@@ -1673,40 +1662,32 @@ body::before {
     border: 1px solid rgba(255, 215, 0, 0.2) !important;
 }
 
-.date-range-label {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 8px;
-    text-align: center;
-}
-
 /* Mobile responsive */
 @media (max-width: 480px) {
-    .date-filter-inputs {
-        flex-direction: column;
-        align-items: stretch;
+    .compact-filter {
+        padding: 10px 12px;
     }
     
-    .date-input-group {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    .date-filter-input {
-        width: auto;
-        flex: 1;
-    }
-    
-    .btn-filter,
-    .btn-reset {
-        margin-top: 0;
-        flex: 1;
-    }
-    
-    .date-filter-inputs > div:last-child {
-        display: flex;
+    .filter-row {
         gap: 8px;
+    }
+    
+    .filter-label {
+        font-size: 12px;
+        width: 100%;
+        margin-bottom: 4px;
+    }
+    
+    .filter-date-input {
+        width: 100px;
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+    
+    .filter-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
     }
 }
 
