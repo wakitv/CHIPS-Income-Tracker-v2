@@ -39,6 +39,50 @@ function getShiftLabel(shift) {
     return labels[shift] || shift;
 }
 
+// GLOBAL: Normalize any date to YYYY-MM-DD string format
+function getDateStr(dateValue) {
+    if (!dateValue) return '';
+    
+    // If already a string, clean it
+    if (typeof dateValue === 'string') {
+        // Remove time portion and timezone if exists
+        const cleaned = dateValue.split('T')[0].trim();
+        
+        // Check if YYYY-MM-DD format
+        if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+            return cleaned;
+        }
+        
+        // Check if M/D/YYYY format (Google Sheets sometimes returns this)
+        if (cleaned.includes('/')) {
+            const parts = cleaned.split('/');
+            if (parts.length === 3) {
+                const month = parts[0].padStart(2, '0');
+                const day = parts[1].padStart(2, '0');
+                const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                return `${year}-${month}-${day}`;
+            }
+        }
+        
+        return cleaned;
+    }
+    
+    // If Date object
+    if (dateValue instanceof Date) {
+        return dateValue.toISOString().split('T')[0];
+    }
+    
+    return '';
+}
+
+// Get today's date as YYYY-MM-DD string
+function getTodayStr() {
+    const now = new Date();
+    return now.getFullYear() + '-' + 
+           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(now.getDate()).padStart(2, '0');
+}
+
 // Setup comma formatting on input
 function setupCommaInput(input) {
     if (!input) return;
@@ -442,58 +486,27 @@ class ChipsApp {
             lastNetChipsEl.textContent = formatWithCommas(this.data.lastNetChips);
         }
         
-        // Get today's date normalized
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayTime = today.getTime();
+        // Get today's date string
+        const todayStr = getTodayStr();
         
-        // Helper function to normalize any date format to compare
-        const normalizeDate = (dateStr) => {
-            if (!dateStr) return null;
-            try {
-                // Handle different date formats
-                let d;
-                if (typeof dateStr === 'string') {
-                    // Remove time portion if exists
-                    const cleanDate = dateStr.split('T')[0];
-                    
-                    // Check if it's in YYYY-MM-DD format
-                    if (cleanDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        const parts = cleanDate.split('-');
-                        d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                    } 
-                    // Check if it's in M/D/YYYY or MM/DD/YYYY format
-                    else if (cleanDate.includes('/')) {
-                        const parts = cleanDate.split('/');
-                        d = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
-                    }
-                    else {
-                        d = new Date(dateStr);
-                    }
-                } else {
-                    d = new Date(dateStr);
-                }
-                
-                d.setHours(0, 0, 0, 0);
-                return d.getTime();
-            } catch (e) {
-                console.log('Date parse error:', dateStr, e);
-                return null;
-            }
-        };
-        
-        // Calculate Today's CFR and Expenses
+        // Calculate Today's CFR and Loader Salary
         let todayCFR = 0;
         let todayLoaderSalary = 0;
         
+        console.log('=== CHECKING CFR ENTRIES ===');
+        console.log('Today:', todayStr);
+        
         if (this.data.cfr && this.data.cfr.length > 0) {
-            this.data.cfr.forEach(c => {
-                const entryTime = normalizeDate(c.date);
-                console.log('CFR Entry:', c.date, '-> normalized:', entryTime, '| today:', todayTime, '| match:', entryTime === todayTime);
+            this.data.cfr.forEach((c, index) => {
+                const entryDateStr = getDateStr(c.date);
+                const isMatch = entryDateStr === todayStr;
                 
-                if (entryTime === todayTime) {
+                console.log(`Entry ${index + 1}: raw="${c.date}" -> normalized="${entryDateStr}" | MATCH: ${isMatch}`);
+                
+                if (isMatch) {
                     todayCFR += parseFloat(c.cfr) || 0;
                     todayLoaderSalary += parseFloat(c.loaderSalary) || 0;
+                    console.log(`  -> Adding CFR: ${c.cfr}, Loader: ${c.loaderSalary}`);
                 }
             });
         }
@@ -502,8 +515,8 @@ class ChipsApp {
         let todayOtherExp = 0;
         if (this.data.expenses && this.data.expenses.length > 0) {
             this.data.expenses.forEach(e => {
-                const entryTime = normalizeDate(e.date);
-                if (entryTime === todayTime) {
+                const entryDateStr = getDateStr(e.date);
+                if (entryDateStr === todayStr) {
                     todayOtherExp += parseFloat(e.total) || 0;
                 }
             });
@@ -512,20 +525,18 @@ class ChipsApp {
         // Today's Expenses = Loader Salary + Other Expenses
         const todayExp = todayLoaderSalary + todayOtherExp;
         
+        console.log('=== TODAY SUMMARY ===');
+        console.log('Today CFR Total:', todayCFR);
+        console.log('Today Loader Salary:', todayLoaderSalary);
+        console.log('Today Other Expenses:', todayOtherExp);
+        console.log('Today TOTAL Expenses:', todayExp);
+        
         if (todayCFREl) {
             todayCFREl.textContent = formatCurrency(todayCFR);
         }
         if (todayExpensesEl) {
             todayExpensesEl.textContent = formatCurrency(todayExp);
         }
-        
-        console.log('=== TODAY SUMMARY ===');
-        console.log('Today:', today.toDateString());
-        console.log('CFR entries:', this.data.cfr?.length || 0);
-        console.log('Today CFR:', todayCFR);
-        console.log('Today Loader Salary:', todayLoaderSalary);
-        console.log('Today Other Expenses:', todayOtherExp);
-        console.log('Today TOTAL Expenses:', todayExp);
     }
     
     renderCFRTable() {
@@ -546,32 +557,10 @@ class ChipsApp {
             return;
         }
         
-        // Helper to normalize date to YYYY-MM-DD string
-        const normalizeDateStr = (dateStr) => {
-            if (!dateStr) return 'Unknown';
-            try {
-                let d;
-                if (typeof dateStr === 'string') {
-                    const cleanDate = dateStr.split('T')[0];
-                    if (cleanDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        return cleanDate;
-                    } else if (cleanDate.includes('/')) {
-                        const parts = cleanDate.split('/');
-                        const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-                        return `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-                    }
-                }
-                d = new Date(dateStr);
-                return d.toISOString().split('T')[0];
-            } catch (e) {
-                return 'Unknown';
-            }
-        };
-        
-        // Group entries by date
+        // Group entries by date using global getDateStr
         const grouped = {};
         cfr.forEach(item => {
-            const dateKey = normalizeDateStr(item.date);
+            const dateKey = getDateStr(item.date) || 'Unknown';
             if (!grouped[dateKey]) {
                 grouped[dateKey] = [];
             }
