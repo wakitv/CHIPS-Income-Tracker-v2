@@ -232,23 +232,15 @@
                     </div>
                 </div>
 
-                <!-- Date Filter Section -->
-                <div class="date-filter-section">
-                    <div class="date-filter-header">
-                        <span class="filter-icon">📅</span>
-                        <span class="filter-title">Filter by Date Range</span>
-                    </div>
-                    <div class="date-filter-inputs">
-                        <div class="date-input-group">
-                            <label>From</label>
-                            <input type="date" class="form-input date-filter-input" id="filterStartDate">
-                        </div>
-                        <div class="date-input-group">
-                            <label>To</label>
-                            <input type="date" class="form-input date-filter-input" id="filterEndDate">
-                        </div>
-                        <button class="btn btn-filter" id="applyFilterBtn">Apply</button>
-                        <button class="btn btn-reset" id="resetFilterBtn">Reset</button>
+                <!-- Compact Date Filter -->
+                <div class="compact-filter">
+                    <div class="filter-row">
+                        <span class="filter-label">📅 Filter:</span>
+                        <input type="text" class="filter-date-input" id="filterStartDate" placeholder="Start Date" readonly>
+                        <span class="filter-separator">—</span>
+                        <input type="text" class="filter-date-input" id="filterEndDate" placeholder="End Date" readonly>
+                        <button class="filter-btn apply" id="applyFilterBtn">✓</button>
+                        <button class="filter-btn reset" id="resetFilterBtn">↺</button>
                     </div>
                 </div>
 
