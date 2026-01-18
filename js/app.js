@@ -553,19 +553,18 @@ class ChipsApp {
         const config = {
             dateFormat: "Y-m-d",
             altInput: true,
-            altFormat: "M d, Y",
+            altFormat: "M d",  // Short format: "Jan 18"
             theme: "dark",
             disableMobile: true,
             animate: true,
-            position: "auto center",
+            position: "below center",
             monthSelectorType: "static",
             prevArrow: "◀",
             nextArrow: "▶",
             onReady: function(selectedDates, dateStr, instance) {
                 instance.calendarContainer.classList.add('chips-calendar');
-                // Style the alt input to match
                 if (instance.altInput) {
-                    instance.altInput.classList.add('filter-date-input');
+                    instance.altInput.classList.add('filter-input');
                 }
             }
         };
@@ -579,7 +578,6 @@ class ChipsApp {
                     self.filterStartDate = dateStr;
                 }
             });
-            // Force set the date
             if (this.filterStartDate) {
                 fp1.setDate(this.filterStartDate, true);
             }
@@ -594,7 +592,6 @@ class ChipsApp {
                     self.filterEndDate = dateStr;
                 }
             });
-            // Force set the date
             if (this.filterEndDate) {
                 fp2.setDate(this.filterEndDate, true);
             }
