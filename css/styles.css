@@ -1574,6 +1574,142 @@ body::before {
 ::-webkit-scrollbar-thumb { background: var(--border-color-strong); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
+/* ===== DATE FILTER SECTION ===== */
+.date-filter-section {
+    background: var(--bg-card);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.date-filter-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.filter-icon {
+    font-size: 18px;
+}
+
+.filter-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.date-filter-inputs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.date-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.date-input-group label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.date-filter-input {
+    width: 140px;
+    padding: 8px 12px;
+    font-size: 13px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+}
+
+.date-filter-input:focus {
+    outline: none;
+    border-color: var(--gold);
+}
+
+.btn-filter,
+.btn-reset {
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 18px;
+}
+
+.btn-filter {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--bg-primary);
+    border: none;
+}
+
+.btn-filter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.btn-reset {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-reset:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.highlight-stat {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05)) !important;
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+}
+
+.date-range-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    text-align: center;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .date-filter-inputs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .date-input-group {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .date-filter-input {
+        width: auto;
+        flex: 1;
+    }
+    
+    .btn-filter,
+    .btn-reset {
+        margin-top: 0;
+        flex: 1;
+    }
+    
+    .date-filter-inputs > div:last-child {
+        display: flex;
+        gap: 8px;
+    }
+}
+
 /* ===== GROUPED CFR TABLE STYLES ===== */
 .cfr-grouped-container {
     display: flex;
