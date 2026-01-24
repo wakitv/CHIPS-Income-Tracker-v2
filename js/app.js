@@ -235,6 +235,7 @@ class ChipsApp {
         
         // Ending Chips listener for NET CHIPS calculation
         document.getElementById('endingChips')?.addEventListener('input', () => this.calculateCFRFields());
+        document.getElementById('cfrAmount')?.addEventListener('input', () => this.autoCalculateEndingChips());
     }
     
     handleNavigation(item) {
@@ -878,6 +879,12 @@ class ChipsApp {
         setTimeout(() => {
             this.setupAmountInputs();
             this.setupDatePickers();
+            
+            // Setup CFR amount listener for auto-calculation
+            const cfrAmountEl = document.getElementById('cfrAmount');
+            if (cfrAmountEl) {
+                cfrAmountEl.addEventListener('input', () => this.autoCalculateEndingChips());
+            }
         }, 100);
     }
     
@@ -897,7 +904,7 @@ class ChipsApp {
         
         this.tempChipsIn.push({ amount, remarks: remarks || 'No remarks' });
         this.renderChipsInList();
-        this.calculateCFRFields();
+        this.autoCalculateEndingChips();  // Auto calculate when chips in changes
         
         if (amountEl) amountEl.value = '';
         if (remarksEl) remarksEl.value = '';
@@ -906,7 +913,7 @@ class ChipsApp {
     removeChipsInItem(index) {
         this.tempChipsIn.splice(index, 1);
         this.renderChipsInList();
-        this.calculateCFRFields();
+        this.autoCalculateEndingChips();  // Auto calculate when chips in changes
     }
     
     renderChipsInList() {
@@ -935,6 +942,22 @@ class ChipsApp {
         
         if (totalEl) totalEl.textContent = formatWithCommas(totalChipsIn);
         if (netEl) netEl.textContent = formatWithCommas(netChips);
+    }
+    
+    autoCalculateEndingChips() {
+        const totalChipsIn = this.tempChipsIn.reduce((sum, item) => sum + item.amount, 0);
+        const cfrAmount = parseFormattedNumber(document.getElementById('cfrAmount')?.value);
+        
+        // Auto calculate: Ending Chips = Chips In - CFR/Chips Out
+        const endingChips = totalChipsIn - cfrAmount;
+        
+        const endingChipsEl = document.getElementById('endingChips');
+        if (endingChipsEl && totalChipsIn > 0) {
+            endingChipsEl.value = formatWithCommas(Math.max(0, endingChips));
+        }
+        
+        // Update NET CHIPS display
+        this.calculateCFRFields();
     }
     
     async saveCFREntry() {
