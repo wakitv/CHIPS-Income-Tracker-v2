@@ -220,6 +220,7 @@ class ChipsApp {
         document.getElementById('settingsCancel').addEventListener('click', () => this.closeSettings());
         document.getElementById('settingsSave').addEventListener('click', () => this.handleSaveSettings());
         document.getElementById('testConnection').addEventListener('click', () => this.handleTestConnection());
+        document.getElementById('hardRefreshBtn')?.addEventListener('click', () => this.hardRefresh());
         
         // Add buttons
         document.getElementById('addCFRBtn')?.addEventListener('click', () => this.openCFRModal());
@@ -1502,6 +1503,29 @@ class ChipsApp {
         this.showToast('Saved!', 'success');
         
         if (settings.webAppUrl) this.syncData();
+    }
+    
+    hardRefresh() {
+        // Clear cache and reload (same as Ctrl+Shift+R)
+        this.showToast('Refreshing...', 'info');
+        
+        // Clear service worker cache if exists
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    caches.delete(name);
+                });
+            });
+        }
+        
+        // Clear local storage cache
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.CACHE);
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.LAST_SYNC);
+        
+        // Force reload without cache
+        setTimeout(() => {
+            window.location.reload(true);
+        }, 500);
     }
     
     // ===== TOAST =====
