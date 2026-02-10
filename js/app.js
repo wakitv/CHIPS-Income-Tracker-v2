@@ -1142,10 +1142,6 @@ class ChipsApp {
         // Focus on amount input
         document.getElementById('newExpenseAmount')?.focus();
     }
-        
-        if (amountEl) amountEl.value = '';
-        if (remarksEl) remarksEl.value = '';
-    }
     
     removeExpenseItem(index) {
         this.tempOtherExpenses.splice(index, 1);
