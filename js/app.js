@@ -848,7 +848,7 @@ class ChipsApp {
             const el = (id) => document.getElementById(id);
             if (el('cfrModalTitle')) el('cfrModalTitle').textContent = 'Add CFR Entry';
             if (el('cfrDate')) el('cfrDate').value = new Date().toISOString().split('T')[0];
-            if (el('cfrLoaderSalary')) el('cfrLoaderSalary').value = '0';
+            if (el('cfrLoaderSalary')) el('cfrLoaderSalary').value = '530';
             if (el('endingChips')) el('endingChips').value = '';
             
             const lastNetChips = this.data.lastNetChips || 0;
