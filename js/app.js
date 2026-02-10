@@ -1027,11 +1027,19 @@ class ChipsApp {
         if (el('otherExpensesForm')) el('otherExpensesForm').reset();
         if (el('otherExpensesRowIndex')) el('otherExpensesRowIndex').value = '';
         if (el('otherExpensesList')) el('otherExpensesList').innerHTML = '';
+        if (el('feesAmount')) el('feesAmount').value = '';
+        if (el('feesRemarks')) el('feesRemarks').value = '';
         
         if (editData) {
             if (el('otherExpensesModalTitle')) el('otherExpensesModalTitle').textContent = 'Edit Other Expenses';
             if (el('otherExpensesRowIndex')) el('otherExpensesRowIndex').value = editData.rowIndex;
-            if (el('otherExpensesDate')) el('otherExpensesDate').value = formatDateForInput(editData.date);
+            
+            // Load fees data
+            if (el('feesAmount')) el('feesAmount').value = formatWithCommas(editData.feesAmount || 0);
+            if (el('feesRemarks')) el('feesRemarks').value = editData.feesRemarks || '';
+            
+            // Store date to set with Flatpickr
+            this.tempExpenseDate = formatDateForInput(editData.date);
             
             try {
                 this.tempOtherExpenses = JSON.parse(editData.expensesList || '[]');
@@ -1040,7 +1048,7 @@ class ChipsApp {
             this.renderOtherExpensesList();
         } else {
             if (el('otherExpensesModalTitle')) el('otherExpensesModalTitle').textContent = 'Add Other Expenses';
-            if (el('otherExpensesDate')) el('otherExpensesDate').value = new Date().toISOString().split('T')[0];
+            this.tempExpenseDate = new Date().toISOString().split('T')[0];
         }
         
         this.calculateOtherExpenses();
@@ -1049,8 +1057,42 @@ class ChipsApp {
         // Setup inputs after modal is shown
         setTimeout(() => {
             this.setupAmountInputs();
-            this.setupDatePickers();
+            this.setupExpenseDatePicker();
+            
+            // Add listener for fees amount to recalculate total
+            const feesAmountEl = document.getElementById('feesAmount');
+            if (feesAmountEl) {
+                feesAmountEl.addEventListener('input', () => this.calculateOtherExpenses());
+            }
         }, 100);
+    }
+    
+    setupExpenseDatePicker() {
+        const dateInput = document.getElementById('otherExpensesDate');
+        
+        if (dateInput) {
+            if (dateInput._flatpickr) dateInput._flatpickr.destroy();
+            
+            const fp = flatpickr(dateInput, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "M d, Y",
+                theme: "dark",
+                disableMobile: true,
+                animate: true,
+                position: "below center",
+                monthSelectorType: "static",
+                prevArrow: "◀",
+                nextArrow: "▶",
+                onReady: function(selectedDates, dateStr, instance) {
+                    instance.calendarContainer.classList.add('chips-calendar');
+                }
+            });
+            
+            if (this.tempExpenseDate) {
+                fp.setDate(this.tempExpenseDate, true);
+            }
+        }
     }
     
     closeOtherExpensesModal() {
@@ -1095,7 +1137,10 @@ class ChipsApp {
     }
     
     calculateOtherExpenses() {
-        const total = this.tempOtherExpenses.reduce((sum, item) => sum + item.amount, 0);
+        const expensesTotal = this.tempOtherExpenses.reduce((sum, item) => sum + item.amount, 0);
+        const feesAmount = parseFormattedNumber(document.getElementById('feesAmount')?.value) || 0;
+        const total = expensesTotal + feesAmount;
+        
         const el = document.getElementById('totalOtherExpenses');
         if (el) el.textContent = formatCurrency(total);
     }
@@ -1103,14 +1148,19 @@ class ChipsApp {
     async saveOtherExpensesEntry() {
         const rowIndex = document.getElementById('otherExpensesRowIndex').value;
         const date = document.getElementById('otherExpensesDate').value;
+        const feesAmount = parseFormattedNumber(document.getElementById('feesAmount')?.value) || 0;
+        const feesRemarks = document.getElementById('feesRemarks')?.value?.trim() || '';
         
-        if (!date || this.tempOtherExpenses.length === 0) {
-            this.showToast('Add at least one expense', 'warning');
+        // Allow saving if there's fees OR expenses
+        if (!date || (this.tempOtherExpenses.length === 0 && feesAmount <= 0)) {
+            this.showToast('Add fees or at least one expense', 'warning');
             return;
         }
         
         const data = {
             date,
+            feesAmount,
+            feesRemarks,
             expensesList: this.tempOtherExpenses
         };
         
