@@ -1021,22 +1021,17 @@ class ChipsApp {
     
     openOtherExpensesModal(editData = null) {
         this.tempOtherExpenses = [];
+        this.editingExpenseIndex = null;
         
         const el = (id) => document.getElementById(id);
         
         if (el('otherExpensesForm')) el('otherExpensesForm').reset();
         if (el('otherExpensesRowIndex')) el('otherExpensesRowIndex').value = '';
         if (el('otherExpensesList')) el('otherExpensesList').innerHTML = '';
-        if (el('feesAmount')) el('feesAmount').value = '';
-        if (el('feesRemarks')) el('feesRemarks').value = '';
         
         if (editData) {
             if (el('otherExpensesModalTitle')) el('otherExpensesModalTitle').textContent = 'Edit Other Expenses';
             if (el('otherExpensesRowIndex')) el('otherExpensesRowIndex').value = editData.rowIndex;
-            
-            // Load fees data
-            if (el('feesAmount')) el('feesAmount').value = formatWithCommas(editData.feesAmount || 0);
-            if (el('feesRemarks')) el('feesRemarks').value = editData.feesRemarks || '';
             
             // Store date to set with Flatpickr
             this.tempExpenseDate = formatDateForInput(editData.date);
@@ -1058,12 +1053,6 @@ class ChipsApp {
         setTimeout(() => {
             this.setupAmountInputs();
             this.setupExpenseDatePicker();
-            
-            // Add listener for fees amount to recalculate total
-            const feesAmountEl = document.getElementById('feesAmount');
-            if (feesAmountEl) {
-                feesAmountEl.addEventListener('input', () => this.calculateOtherExpenses());
-            }
         }, 100);
     }
     
@@ -1102,16 +1091,57 @@ class ChipsApp {
     
     addExpenseItem() {
         const amountEl = document.getElementById('newExpenseAmount');
+        const feesEl = document.getElementById('newExpenseFees');
         const remarksEl = document.getElementById('newExpenseRemarks');
         
         const amount = parseFormattedNumber(amountEl?.value);
+        const fees = parseFormattedNumber(feesEl?.value) || 0;
         const remarks = remarksEl?.value?.trim() || '';
         
         if (amount <= 0) { this.showToast('Enter valid amount', 'warning'); return; }
         
-        this.tempOtherExpenses.push({ amount, remarks: remarks || 'No remarks' });
+        if (this.editingExpenseIndex !== null) {
+            // Update existing item
+            this.tempOtherExpenses[this.editingExpenseIndex] = { 
+                amount, 
+                fees,
+                remarks: remarks || 'No remarks' 
+            };
+            this.editingExpenseIndex = null;
+            
+            // Reset button text
+            const addBtn = document.querySelector('.multi-input-add .btn-add');
+            if (addBtn) addBtn.textContent = '+ Add';
+        } else {
+            // Add new item
+            this.tempOtherExpenses.push({ amount, fees, remarks: remarks || 'No remarks' });
+        }
+        
         this.renderOtherExpensesList();
         this.calculateOtherExpenses();
+        
+        if (amountEl) amountEl.value = '';
+        if (feesEl) feesEl.value = '';
+        if (remarksEl) remarksEl.value = '';
+    }
+    
+    editExpenseItem(index) {
+        const item = this.tempOtherExpenses[index];
+        if (!item) return;
+        
+        document.getElementById('newExpenseAmount').value = formatWithCommas(item.amount);
+        document.getElementById('newExpenseFees').value = item.fees ? formatWithCommas(item.fees) : '';
+        document.getElementById('newExpenseRemarks').value = item.remarks || '';
+        
+        this.editingExpenseIndex = index;
+        
+        // Change button text to "Update"
+        const addBtn = document.querySelector('.multi-input-add .btn-add');
+        if (addBtn) addBtn.textContent = '✓ Update';
+        
+        // Focus on amount input
+        document.getElementById('newExpenseAmount')?.focus();
+    }
         
         if (amountEl) amountEl.value = '';
         if (remarksEl) remarksEl.value = '';
@@ -1129,17 +1159,20 @@ class ChipsApp {
         
         list.innerHTML = this.tempOtherExpenses.map((item, i) => `
             <div class="multi-input-item">
-                <span class="item-amount">${formatCurrency(item.amount)}</span>
+                <span class="item-amount">${formatWithCommas(item.amount)}</span>
+                <span class="item-fees">${item.fees ? '-' + formatWithCommas(item.fees) : ''}</span>
                 <span class="item-remarks">${item.remarks}</span>
+                <button type="button" class="item-edit" onclick="app.editExpenseItem(${i})">✎</button>
                 <button type="button" class="item-remove" onclick="app.removeExpenseItem(${i})">×</button>
             </div>
         `).join('');
     }
     
     calculateOtherExpenses() {
-        const expensesTotal = this.tempOtherExpenses.reduce((sum, item) => sum + item.amount, 0);
-        const feesAmount = parseFormattedNumber(document.getElementById('feesAmount')?.value) || 0;
-        const total = expensesTotal + feesAmount;
+        // Total = sum of (amount + fees) for each item
+        const total = this.tempOtherExpenses.reduce((sum, item) => {
+            return sum + (item.amount || 0) + (item.fees || 0);
+        }, 0);
         
         const el = document.getElementById('totalOtherExpenses');
         if (el) el.textContent = formatCurrency(total);
@@ -1148,19 +1181,14 @@ class ChipsApp {
     async saveOtherExpensesEntry() {
         const rowIndex = document.getElementById('otherExpensesRowIndex').value;
         const date = document.getElementById('otherExpensesDate').value;
-        const feesAmount = parseFormattedNumber(document.getElementById('feesAmount')?.value) || 0;
-        const feesRemarks = document.getElementById('feesRemarks')?.value?.trim() || '';
         
-        // Allow saving if there's fees OR expenses
-        if (!date || (this.tempOtherExpenses.length === 0 && feesAmount <= 0)) {
-            this.showToast('Add fees or at least one expense', 'warning');
+        if (!date || this.tempOtherExpenses.length === 0) {
+            this.showToast('Add at least one expense', 'warning');
             return;
         }
         
         const data = {
             date,
-            feesAmount,
-            feesRemarks,
             expensesList: this.tempOtherExpenses
         };
         
