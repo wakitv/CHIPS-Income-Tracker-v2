@@ -1605,6 +1605,11 @@ body::before {
     .calculated-grid { grid-template-columns: 1fr; }
     .multi-input-add { flex-direction: column; }
     .multi-input-add .form-input:first-child { max-width: none; }
+    .multi-input-add.three-col .form-input:nth-child(1),
+    .multi-input-add.three-col .form-input:nth-child(2) { max-width: none; }
+    .multi-input-item { flex-wrap: wrap; gap: 8px; }
+    .multi-input-item .item-amount { min-width: 70px; }
+    .multi-input-item .item-fees { min-width: 60px; }
 }
 
 @media (max-width: 480px) {
