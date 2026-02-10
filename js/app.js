@@ -1191,28 +1191,71 @@ class ChipsApp {
         if (editData) {
             document.querySelector('#weeklyModal .modal-title').textContent = 'Edit Weekly Cutoff';
             document.getElementById('weeklyRowIndex').value = editData.rowIndex;
-            document.getElementById('weeklyStart').value = formatDateForInput(editData.start);
-            document.getElementById('weeklyEnd').value = formatDateForInput(editData.end);
-            document.getElementById('weeklyGGR').value = editData.ggr;
-            document.getElementById('weeklyLoaderSalary').value = editData.loaderSalary;
-            document.getElementById('weeklyOtherExp').value = editData.otherExpenses;
-            this.calculateWeeklyFields();
+            document.getElementById('weeklyGGR').value = formatWithCommas(editData.ggr);
+            document.getElementById('weeklyLoaderSalary').value = formatWithCommas(editData.loaderSalary);
+            document.getElementById('weeklyOtherExp').value = formatWithCommas(editData.otherExpenses);
+            
+            // Store dates to set after Flatpickr init
+            this.tempWeeklyStart = formatDateForInput(editData.start);
+            this.tempWeeklyEnd = formatDateForInput(editData.end);
         } else {
             document.querySelector('#weeklyModal .modal-title').textContent = 'New Weekly Cutoff';
             const end = new Date();
             const start = new Date();
             start.setDate(start.getDate() - 6);
-            document.getElementById('weeklyStart').value = start.toISOString().split('T')[0];
-            document.getElementById('weeklyEnd').value = end.toISOString().split('T')[0];
+            
+            this.tempWeeklyStart = start.toISOString().split('T')[0];
+            this.tempWeeklyEnd = end.toISOString().split('T')[0];
             this.resetWeeklyCalculations();
         }
         
         document.getElementById('weeklyModal').classList.add('active');
         
-        // Setup date pickers after modal is shown
+        // Setup Flatpickr for weekly modal dates
         setTimeout(() => {
-            this.setupDatePickers();
+            this.setupWeeklyDatePickers();
+            this.setupAmountInputs();
+            if (editData) {
+                this.calculateWeeklyFields();
+            }
         }, 100);
+    }
+    
+    setupWeeklyDatePickers() {
+        const startInput = document.getElementById('weeklyStart');
+        const endInput = document.getElementById('weeklyEnd');
+        
+        const config = {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "M d, Y",
+            theme: "dark",
+            disableMobile: true,
+            animate: true,
+            position: "below center",
+            monthSelectorType: "static",
+            prevArrow: "◀",
+            nextArrow: "▶",
+            onReady: function(selectedDates, dateStr, instance) {
+                instance.calendarContainer.classList.add('chips-calendar');
+            }
+        };
+        
+        if (startInput) {
+            if (startInput._flatpickr) startInput._flatpickr.destroy();
+            const fp1 = flatpickr(startInput, config);
+            if (this.tempWeeklyStart) {
+                fp1.setDate(this.tempWeeklyStart, true);
+            }
+        }
+        
+        if (endInput) {
+            if (endInput._flatpickr) endInput._flatpickr.destroy();
+            const fp2 = flatpickr(endInput, config);
+            if (this.tempWeeklyEnd) {
+                fp2.setDate(this.tempWeeklyEnd, true);
+            }
+        }
     }
     
     closeWeeklyModal() {
@@ -1232,8 +1275,8 @@ class ChipsApp {
             if (chipsAPI.isConfigured()) {
                 this.showToast('Calculating...', 'info');
                 const result = await chipsAPI.calculateWeeklySummary(startDate, endDate);
-                document.getElementById('weeklyLoaderSalary').value = result.loaderSalary || 0;
-                document.getElementById('weeklyOtherExp').value = result.otherExpenses || 0;
+                document.getElementById('weeklyLoaderSalary').value = formatWithCommas(result.loaderSalary || 0);
+                document.getElementById('weeklyOtherExp').value = formatWithCommas(result.otherExpenses || 0);
                 this.calculateWeeklyFields();
                 this.showToast('Calculated!', 'success');
             } else {
@@ -1258,8 +1301,8 @@ class ChipsApp {
                     }
                 });
                 
-                document.getElementById('weeklyLoaderSalary').value = loaderSalary;
-                document.getElementById('weeklyOtherExp').value = otherExpenses;
+                document.getElementById('weeklyLoaderSalary').value = formatWithCommas(loaderSalary);
+                document.getElementById('weeklyOtherExp').value = formatWithCommas(otherExpenses);
                 this.calculateWeeklyFields();
             }
         } catch (error) {
@@ -1268,9 +1311,9 @@ class ChipsApp {
     }
     
     calculateWeeklyFields() {
-        const ggr = parseFloat(document.getElementById('weeklyGGR').value) || 0;
-        const loaderSalary = parseFloat(document.getElementById('weeklyLoaderSalary').value) || 0;
-        const otherExp = parseFloat(document.getElementById('weeklyOtherExp').value) || 0;
+        const ggr = parseFormattedNumber(document.getElementById('weeklyGGR').value);
+        const loaderSalary = parseFormattedNumber(document.getElementById('weeklyLoaderSalary').value);
+        const otherExp = parseFormattedNumber(document.getElementById('weeklyOtherExp').value);
         
         const netProfit = ggr - loaderSalary - otherExp;
         const roi = ggr > 0 ? (netProfit / ggr) : 0;
@@ -1308,9 +1351,9 @@ class ChipsApp {
         const rowIndex = document.getElementById('weeklyRowIndex').value;
         const start = document.getElementById('weeklyStart').value;
         const end = document.getElementById('weeklyEnd').value;
-        const ggr = parseFloat(document.getElementById('weeklyGGR').value) || 0;
-        const loaderSalary = parseFloat(document.getElementById('weeklyLoaderSalary').value) || 0;
-        const otherExpenses = parseFloat(document.getElementById('weeklyOtherExp').value) || 0;
+        const ggr = parseFormattedNumber(document.getElementById('weeklyGGR').value);
+        const loaderSalary = parseFormattedNumber(document.getElementById('weeklyLoaderSalary').value);
+        const otherExpenses = parseFormattedNumber(document.getElementById('weeklyOtherExp').value);
         
         if (!start || !end || ggr <= 0) {
             this.showToast('Fill required fields', 'warning');
