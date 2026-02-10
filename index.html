@@ -664,11 +664,11 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Start Date</label>
-                                <input type="date" class="form-input" id="weeklyStart" required>
+                                <input type="text" class="form-input" id="weeklyStart" placeholder="Select date" required readonly>
                             </div>
                             <div class="form-group">
                                 <label>End Date</label>
-                                <input type="date" class="form-input" id="weeklyEnd" required>
+                                <input type="text" class="form-input" id="weeklyEnd" placeholder="Select date" required readonly>
                             </div>
                         </div>
                         <button type="button" class="btn btn-secondary btn-full" onclick="app.calculateFromDates()">
@@ -680,17 +680,17 @@
                         <h4 class="form-section-title">💰 Revenue & Expenses</h4>
                         <div class="form-group">
                             <label>GGR (Gross Gaming Revenue)</label>
-                            <input type="number" class="form-input" id="weeklyGGR" step="0.01" placeholder="Enter GGR from casino site" required>
+                            <input type="text" class="form-input amount-input" id="weeklyGGR" placeholder="Enter GGR from casino site" required>
                             <small class="form-hint">This is the 1-week cutoff sales from the casino site</small>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Loader Salary</label>
-                                <input type="number" class="form-input" id="weeklyLoaderSalary" step="0.01" placeholder="0" readonly>
+                                <input type="text" class="form-input" id="weeklyLoaderSalary" placeholder="0" readonly>
                             </div>
                             <div class="form-group">
                                 <label>Other Expenses</label>
-                                <input type="number" class="form-input" id="weeklyOtherExp" step="0.01" placeholder="0" readonly>
+                                <input type="text" class="form-input" id="weeklyOtherExp" placeholder="0" readonly>
                             </div>
                         </div>
                     </div>
@@ -712,10 +712,6 @@
                         </div>
                         <hr class="divider">
                         <h4 style="text-align: center; margin-bottom: 12px;">Distribution Breakdown</h4>
-                        <div class="calc-item" style="text-align: center; margin-bottom: 12px; padding: 8px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                            <span class="calc-label">Retained 20%</span>
-                            <span class="calc-value" id="calcRetained20" style="color: var(--gold);">₱0</span>
-                        </div>
                         <div class="calc-item" style="text-align: center; margin-bottom: 12px; padding: 8px; background: rgba(0,255,136,0.1); border-radius: 8px;">
                             <span class="calc-label">For Distribution 80%</span>
                             <span class="calc-value" id="calcDist80" style="color: var(--green);">₱0</span>
@@ -734,6 +730,10 @@
                                 <span class="calc-label">Savings 15%</span>
                                 <span class="calc-value" id="calcSavings15">₱0</span>
                             </div>
+                        </div>
+                        <div class="calc-item" style="text-align: center; margin-top: 12px; padding: 8px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <span class="calc-label">Retained</span>
+                            <span class="calc-value" id="calcRetained20" style="color: var(--gold);">₱0</span>
                         </div>
                     </div>
                 </form>
