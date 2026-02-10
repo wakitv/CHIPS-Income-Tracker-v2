@@ -92,13 +92,13 @@
                     <span class="nav-icon">🏦</span>
                     <span class="nav-text">Site Fund 35%</span>
                 </li>
-                <li class="nav-item" data-tab="retained">
-                    <span class="nav-icon">💼</span>
-                    <span class="nav-text">Retained 20%</span>
-                </li>
                 <li class="nav-item" data-tab="savings">
                     <span class="nav-icon">🐷</span>
                     <span class="nav-text">Savings 15%</span>
+                </li>
+                <li class="nav-item" data-tab="retained">
+                    <span class="nav-icon">💼</span>
+                    <span class="nav-text">Retained</span>
                 </li>
             </ul>
             <div class="sidebar-footer">
@@ -416,7 +416,7 @@
             <!-- Retained Tab -->
             <section class="tab-content" id="tab-retained">
                 <div class="page-header">
-                    <h2 class="page-title">Retained 20%</h2>
+                    <h2 class="page-title">Retained</h2>
                     <p class="page-subtitle">Track retained funds for bills and utilities</p>
                 </div>
 
@@ -712,6 +712,10 @@
                         </div>
                         <hr class="divider">
                         <h4 style="text-align: center; margin-bottom: 12px;">Distribution Breakdown</h4>
+                        <div class="calc-item" style="text-align: center; margin-bottom: 12px; padding: 8px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <span class="calc-label">Retained 20%</span>
+                            <span class="calc-value" id="calcRetained20" style="color: var(--gold);">₱0</span>
+                        </div>
                         <div class="calc-item" style="text-align: center; margin-bottom: 12px; padding: 8px; background: rgba(0,255,136,0.1); border-radius: 8px;">
                             <span class="calc-label">For Distribution 80%</span>
                             <span class="calc-value" id="calcDist80" style="color: var(--green);">₱0</span>
@@ -730,10 +734,6 @@
                                 <span class="calc-label">Savings 15%</span>
                                 <span class="calc-value" id="calcSavings15">₱0</span>
                             </div>
-                        </div>
-                        <div class="calc-item" style="text-align: center; margin-top: 12px; padding: 8px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                            <span class="calc-label">Retained</span>
-                            <span class="calc-value" id="calcRetained20" style="color: var(--gold);">₱0</span>
                         </div>
                     </div>
                 </form>
