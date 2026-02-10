@@ -622,27 +622,14 @@
                     </div>
 
                     <div class="form-section">
-                        <h4 class="form-section-title">💸 Fees</h4>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Amount</label>
-                                <input type="text" class="form-input amount-input" id="feesAmount" placeholder="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Remarks</label>
-                                <input type="text" class="form-input" id="feesRemarks" placeholder="e.g. Service Fee, Bank Fee">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-section">
                         <h4 class="form-section-title">📋 Other Expenses (Multiple)</h4>
                         <div class="multi-input-list" id="otherExpensesList">
                             <!-- Dynamic items -->
                         </div>
-                        <div class="multi-input-add">
+                        <div class="multi-input-add three-col">
                             <input type="text" class="form-input amount-input" id="newExpenseAmount" placeholder="Amount">
-                            <input type="text" class="form-input" id="newExpenseRemarks" placeholder="Remarks (e.g. Groceries)">
+                            <input type="text" class="form-input amount-input" id="newExpenseFees" placeholder="Fees">
+                            <input type="text" class="form-input" id="newExpenseRemarks" placeholder="Remarks">
                             <button type="button" class="btn btn-small btn-add" onclick="app.addExpenseItem()">+ Add</button>
                         </div>
                     </div>
