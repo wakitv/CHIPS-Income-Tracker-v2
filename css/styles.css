@@ -1139,13 +1139,35 @@ body::before {
     font-family: var(--font-mono);
     font-weight: 600;
     color: var(--gold);
-    min-width: 100px;
+    min-width: 80px;
+}
+
+.multi-input-item .item-fees {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--red);
+    min-width: 70px;
+    font-size: 12px;
 }
 
 .multi-input-item .item-remarks {
     flex: 1;
     color: var(--text-secondary);
     font-size: 13px;
+}
+
+.multi-input-item .item-edit {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 215, 0, 0.15);
+    border: none;
+    border-radius: 6px;
+    color: var(--gold);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
 }
 
 .multi-input-item .item-remove {
@@ -1165,6 +1187,18 @@ body::before {
 .multi-input-add {
     display: flex;
     gap: 8px;
+}
+
+.multi-input-add.three-col .form-input {
+    flex: 1;
+}
+
+.multi-input-add.three-col .form-input:nth-child(1) {
+    max-width: 100px;
+}
+
+.multi-input-add.three-col .form-input:nth-child(2) {
+    max-width: 80px;
 }
 
 .multi-input-add .form-input {
