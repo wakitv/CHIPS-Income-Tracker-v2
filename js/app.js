@@ -132,23 +132,12 @@ class ChipsApp {
     }
     
     async init() {
-        await this.showSplash();
         this.setupEventListeners();
         this.setupAmountInputs();
         this.loadFromCache();
         await this.syncData();
         this.setupAutoSync();
         this.renderDashboard();
-    }
-    
-    async showSplash() {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                document.getElementById('splash').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
-                resolve();
-            }, 2500);
-        });
     }
     
     setupAmountInputs() {
